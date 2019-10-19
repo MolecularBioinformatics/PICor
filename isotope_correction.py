@@ -248,6 +248,8 @@ def calc_transition_prob(
     label2 = pd.DataFrame.from_dict(label2, orient="index")
     difference_labels = label2.sub(label1, fill_value=0).iloc[:, 0]
     difference_labels.index = difference_labels.index.str[:-2]
+    label1.index = label1.index.str[:-2]
+    label2.index = label2.index.str[:-2]
     # difference_labels = difference_labels[difference_labels != 0]
     # Checks if transition from label1 to 2 is possible
     if difference_labels.lt(0).any():
@@ -257,8 +259,8 @@ def calc_transition_prob(
     abundance = get_isotope_abundance(isotopes_file)
     prob = []
     for elem in difference_labels.index:
+        n_unlab = n_atoms[elem] - label2.loc[elem,0]
         n_label = difference_labels[elem]
-        n_unlab = n_atoms[elem] - n_label
         abun_unlab = abundance[elem][0]
         abun_lab = abundance[elem][1]
         if n_label == 0:
