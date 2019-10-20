@@ -84,7 +84,7 @@ def get_isotope_abundance(isotopes_file):
         comma separated csv with element and abundance columns
     :return: dict
     """
-    isotopes = pd.read_csv(isotopes_file, sep=",")
+    isotopes = pd.read_csv(isotopes_file, sep="\t")
     isotopes.set_index("element", drop=True, inplace=True)
 
     abundance = {}
@@ -123,8 +123,8 @@ def get_metabolite_formula(metabolite, metabolites_file):
 def calc_isotopologue_prob(
     metabolite,
     label=False,
-    isotopes_file="~/isocordb/Isotopes.dat",
-    metabolites_file="~/isocordb/Metabolites.dat",
+    isotopes_file="isotopes.csv",
+    metabolites_file="metabolites.csv",
 ):
     """Calculate isotopologue probability for metabolite
 
@@ -133,9 +133,9 @@ def calc_isotopologue_prob(
     .parm isotopologue: False or str of type and number of atoms
         Only C13 and N15 is supported right now e.g. 5C13
     :param isotopes_file: Path to isotope file
-        default location: ~/isocordb/Isotopes.dat
+        default location: ./isotopes.csv
     :param metabolites_file: Path to metabolites file
-        default location: ~/isocordb/Metabolites.dat
+        default location: ./metabolites.csv
     :return : Pandas DataFrame
         Probabilities for different isotopologues for each element and total probability
     """
@@ -281,8 +281,8 @@ def calc_isotopologue_correction(
     raw_data,
     metabolite,
     subset=False,
-    isotopes_file="~/isocordb/Isotopes.dat",
-    metabolites_file="~/isocordb/Metabolites.dat",
+    isotopes_file="isotopes.csv",
+    metabolites_file="metabolites.csv",
     verbose=False,
 ):
     """Calculate isotopologue correction factor for metabolite
@@ -296,9 +296,9 @@ def calc_isotopologue_correction(
     :param subset: list of str or False
         List of column names to use for calculation
     :param isotopes_file: Path to isotope file
-        default location: ~/isocordb/Isotopes.dat
+        default location: ./isotopes.csv
     :param metabolites_file: Path to metabolites file
-        default location: ~/isocordb/Metabolites.dat
+        default location: ./metabolites.csv
     :param verbose: bool (default: False)
         print correction and transition factors
     :return: pandas DataFrame
