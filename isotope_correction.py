@@ -1,3 +1,4 @@
+import os
 import re
 import warnings
 from numpy import prod
@@ -121,10 +122,7 @@ def get_metabolite_formula(metabolite, metabolites_file):
 
 
 def calc_isotopologue_prob(
-    metabolite,
-    label=False,
-    isotopes_file="isotopes.csv",
-    metabolites_file="metabolites.csv",
+    metabolite, label=False, isotopes_file=None, metabolites_file=None
 ):
     """Calculate isotopologue probability for metabolite
 
@@ -133,12 +131,20 @@ def calc_isotopologue_prob(
     .parm isotopologue: False or str of type and number of atoms
         Only C13 and N15 is supported right now e.g. 5C13
     :param isotopes_file: Path to isotope file
-        default location: ./isotopes.csv
+        default location: scripts/isotope_correction/isotopes.csv
     :param metabolites_file: Path to metabolites file
-        default location: ./metabolites.csv
+        default location: scripts/isotope_correction/metabolites.csv
     :return : Pandas DataFrame
         Probabilities for different isotopologues for each element and total probability
     """
+    if not isotopes_file:
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        isotopes_file = os.path.join(dir_path, "isotopes.csv")
+    if not metabolites_file:
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        metabolites_file = os.path.join(dir_path, "metabolites.csv")
     abundance = get_isotope_abundance(isotopes_file)
 
     # Parse label and store information in atom_label dict
@@ -248,7 +254,6 @@ def calc_transition_prob(
     label2 = pd.DataFrame.from_dict(label2, orient="index")
     difference_labels = label2.sub(label1, fill_value=0).iloc[:, 0]
     difference_labels.index = difference_labels.index.str[:-2]
-    label1.index = label1.index.str[:-2]
     label2.index = label2.index.str[:-2]
     # difference_labels = difference_labels[difference_labels != 0]
     # Checks if transition from label1 to 2 is possible
@@ -259,7 +264,7 @@ def calc_transition_prob(
     abundance = get_isotope_abundance(isotopes_file)
     prob = []
     for elem in difference_labels.index:
-        n_unlab = n_atoms[elem] - label2.loc[elem,0]
+        n_unlab = n_atoms[elem] - label2.loc[elem, 0]
         n_label = difference_labels[elem]
         abun_unlab = abundance[elem][0]
         abun_lab = abundance[elem][1]
@@ -281,8 +286,8 @@ def calc_isotopologue_correction(
     raw_data,
     metabolite,
     subset=False,
-    isotopes_file="isotopes.csv",
-    metabolites_file="metabolites.csv",
+    isotopes_file=None,
+    metabolites_file=None,
     verbose=False,
 ):
     """Calculate isotopologue correction factor for metabolite
@@ -296,14 +301,22 @@ def calc_isotopologue_correction(
     :param subset: list of str or False
         List of column names to use for calculation
     :param isotopes_file: Path to isotope file
-        default location: ./isotopes.csv
+        default location: scripts/isotope_correction/isotopes.csv
     :param metabolites_file: Path to metabolites file
-        default location: ./metabolites.csv
+        default location: scripts/isotope_correction/metabolites.csv
     :param verbose: bool (default: False)
         print correction and transition factors
     :return: pandas DataFrame
         Corrected data
     """
+    if not isotopes_file:
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        isotopes_file = os.path.join(dir_path, "isotopes.csv")
+    if not metabolites_file:
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        metabolites_file = os.path.join(dir_path, "metabolites.csv")
     df = raw_data.copy(deep=True)
     if not subset:
         subset = df.columns
