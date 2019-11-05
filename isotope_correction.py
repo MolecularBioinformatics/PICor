@@ -109,7 +109,7 @@ def get_metabolite_formula(metabolite, metabolites_file):
     :return: dict
         Elements and number
     """
-    metabolites = pd.read_csv(metabolites_file, sep="\t")
+    metabolites = pd.read_csv(metabolites_file, sep="\t", na_filter=False)
     metabolites["formula"] = metabolites["formula"].apply(parse_formula)
     metabolites.set_index("name", drop=True, inplace=True)
 
