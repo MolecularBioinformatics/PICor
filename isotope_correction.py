@@ -22,16 +22,23 @@ def parse_formula(string):
 
 
 def parse_label(string):
-    """Parse label e.g. 5C13N15 and return dict
+    """Parse label e.g. 5C13N15 or 'No label' and return dict
 
     Parse label e.g. 5C13N15 and return dictionary of elements and number of atoms
-    Be careful, no input check is happening.
-    Only support H02 (deuterium),  C13 and N15
+    Only support H02 (deuterium), C13, N15 and 'No label'
     :param string: Str of chemical formula
     :return : Dict of str and int
     """
-    label = re.findall(r"(\d*)([NCH][01]\d?)", string)  # Regex for H02, N15 and C13
+    if not isinstance(string, str):
+        raise TypeError("label must be string")
+    if string.lower() == "no label":
+        return {}
+    allowed_isotopes = ["H02", "C13", "N15"]
+    label = re.findall(r"(\d*)([A-Z][a-z]*\d\d)", string)
     x = {elem: int(num) if num != "" else 1 for num, elem in label}
+    if not set(x).issubset(allowed_isotopes) or not x:
+        # Check for empty list and only allowed isotopes
+        raise ValueError("Label should be H02, C13, N15 or 'No label'")
     return x
 
 
@@ -45,6 +52,8 @@ def sort_labels(labels):
     :return: list of str
         Sorted list
     """
+    if isinstance(labels, str):
+        raise TypeError("labels must be list-like but not string")
     masses = {}
     for label in labels:
         mass = parse_label(label)
