@@ -26,11 +26,17 @@ def parse_label(string):
 
     Parse label e.g. 5C13N15 and return dictionary of elements and number of atoms
     Only support H02 (deuterium), C13, N15 and 'No label'
+    Prefix separated by colon can be used and will be ignored, e.g. "NA:2C13"
+    Underscores can be used to separate different elements, e.g. "3C13_6H02"
     :param string: Str of chemical formula
     :return : Dict of str and int
     """
     if not isinstance(string, str):
         raise TypeError("label must be string")
+    if string.count(":") > 1:
+        raise ValueError("only one colon allowed in label to separate prefix")
+    string = string.split(":")[-1]
+
     if string.lower() == "no label":
         return {}
     allowed_isotopes = ["H02", "C13", "N15"]
