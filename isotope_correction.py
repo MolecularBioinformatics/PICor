@@ -128,11 +128,15 @@ def get_metabolite_formula(metabolite, metabolites_file):
     metabolites["formula"] = metabolites["formula"].apply(parse_formula)
     metabolites.set_index("name", drop=True, inplace=True)
 
-    n_atoms = {}
-    n_atoms["C"] = metabolites.loc[metabolite].formula["C"]
-    n_atoms["N"] = metabolites.loc[metabolite].formula["N"]
-    n_atoms["O"] = metabolites.loc[metabolite].formula["O"]
-    n_atoms["H"] = metabolites.loc[metabolite].formula["H"]
+    try:
+        n_atoms = {}
+        n_atoms["C"] = metabolites.loc[metabolite].formula["C"]
+        n_atoms["N"] = metabolites.loc[metabolite].formula["N"]
+        n_atoms["O"] = metabolites.loc[metabolite].formula["O"]
+        n_atoms["H"] = metabolites.loc[metabolite].formula["H"]
+    except KeyError as er:
+        met_key = re.search("\[\w*?\]", str(er))[0]
+        raise KeyError(f"Metabolite {met_key} couldn't be found in metabolites file")
     return n_atoms
 
 
