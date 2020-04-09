@@ -6,6 +6,9 @@ from scipy.special import binom
 import pandas as pd
 
 
+abundance = None
+metabolites = None
+
 def parse_formula(string):
     """Parse chemical formula and return dict
 
@@ -124,9 +127,11 @@ def get_metabolite_formula(metabolite, metabolites_file):
     :return: dict
         Elements and number
     """
-    metabolites = pd.read_csv(metabolites_file, sep="\t", na_filter=False)
-    metabolites["formula"] = metabolites["formula"].apply(parse_formula)
-    metabolites.set_index("name", drop=True, inplace=True)
+    global metabolites
+    if not isinstance(metabolites, pd.DataFrame):
+        metabolites = pd.read_csv(metabolites_file, sep="\t", na_filter=False)
+        metabolites["formula"] = metabolites["formula"].apply(parse_formula)
+        metabolites.set_index("name", drop=True, inplace=True)
 
     try:
         n_atoms = {}
@@ -164,7 +169,9 @@ def calc_isotopologue_prob(
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         metabolites_file = os.path.join(dir_path, "metabolites.csv")
-    abundance = get_isotope_abundance(isotopes_file)
+    global abundance
+    if not abundance:
+        abundance = get_isotope_abundance(isotopes_file)
 
     # Parse label and store information in atom_label dict
     atom_label = {}
@@ -279,8 +286,10 @@ def calc_transition_prob(
     if difference_labels.lt(0).any():
         return 0
 
-    # return (difference_labels)
-    abundance = get_isotope_abundance(isotopes_file)
+    global abundance
+    if not abundance:
+        abundance = get_isotope_abundance(isotopes_file)
+
     prob = []
     for elem in difference_labels.index:
         n_unlab = n_atoms[elem] - label2.loc[elem, 0]
@@ -361,3 +370,6 @@ def calc_isotopologue_correction(
                 if verbose:
                     print(f"Transition prob {label1} -> {label2}: {prob}")
     return df
+
+
+
