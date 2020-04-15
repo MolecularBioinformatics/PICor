@@ -9,6 +9,7 @@ import pandas as pd
 abundance = None
 metabolites = None
 
+
 def parse_formula(string):
     """Parse chemical formula and return dict
 
@@ -370,6 +371,3 @@ def calc_isotopologue_correction(
                 if verbose:
                     print(f"Transition prob {label1} -> {label2}: {prob}")
     return df
-
-
-
