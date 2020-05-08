@@ -315,6 +315,7 @@ def calc_isotopologue_correction(
     raw_data,
     metabolite,
     subset=False,
+    exclude_col=False,
     isotopes_file=None,
     metabolites_file=None,
     verbose=False,
@@ -329,6 +330,8 @@ def calc_isotopologue_correction(
         metabilte name
     :param subset: list of str or False
         List of column names to use for calculation
+    :param exclude_col: list of str
+        Columns to ignore in calculation
     :param isotopes_file: Path to isotope file
         default location: scripts/isotope_correction/isotopes.csv
     :param metabolites_file: Path to metabolites file
@@ -349,6 +352,7 @@ def calc_isotopologue_correction(
     df = raw_data.copy(deep=True)
     if not subset:
         subset = df.columns
+        subset = list(set(subset) - set(exclude_col))
     subset = sort_labels(subset)
 
     for label1 in subset:
