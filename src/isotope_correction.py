@@ -146,7 +146,7 @@ def get_metabolite_formula(metabolite, metabolites_file):
     return n_atoms
 
 
-def calc_isotopologue_prob(
+def calc_correction_factor(
     metabolite, label=False, isotopes_file=None, metabolites_file=None
 ):
     """Calculate isotopologue probability for metabolite
@@ -356,7 +356,7 @@ def calc_isotopologue_correction(
     subset = sort_labels(subset)
 
     for label1 in subset:
-        probs = calc_isotopologue_prob(
+        probs = calc_correction_factor(
             metabolite, label1, isotopes_file, metabolites_file
         )
         # Correction factor is 1/P(Z0)
