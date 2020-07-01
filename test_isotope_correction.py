@@ -17,7 +17,7 @@ class TestLabels(unittest.TestCase):
         """
         data = ["C12", "H12"]
         with self.assertRaises(TypeError):
-            res = ic.parse_formula(data)
+            ic.parse_formula(data)
 
     def test_label_string(self):
         """Test that parse_label parses string correctly
@@ -40,7 +40,7 @@ class TestLabels(unittest.TestCase):
         """
         data = ["1C13", "H02"]
         with self.assertRaises(TypeError):
-            res = ic.parse_label(data)
+            ic.parse_label(data)
 
     def test_label_bad_isotope(self):
         """Test that parse_label raises ValueError with unrecognized string as input
@@ -48,14 +48,14 @@ class TestLabels(unittest.TestCase):
         bad_isotope_list = ["C14", "B11", "Be9", "H02C14"]
         for data in bad_isotope_list:
             with self.assertRaises(ValueError):
-                res = ic.parse_label(data)
+                ic.parse_label(data)
 
     def test_label_empty_string(self):
         """Test that parse_label raises ValueError with empty input string
         """
         data = ""
         with self.assertRaises(ValueError):
-            res = ic.parse_label(data)
+            ic.parse_label(data)
 
     def test_sort_list(self):
         """Test that sort_labels gives correct order with list of strings
@@ -70,7 +70,7 @@ class TestLabels(unittest.TestCase):
         """
         data = "N15"
         with self.assertRaises(TypeError):
-            res = ic.sort_labels(data)
+            ic.sort_labels(data)
 
     def test_label_smaller_true(self):
         """Test that label_shift_smaller returns True for label1 being smaller
