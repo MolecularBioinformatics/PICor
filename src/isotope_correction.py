@@ -1,3 +1,10 @@
+"""Isotopologue correction using statistical distributions.
+
+Functions:
+    calc_isotopologue_correction: Correct DataFrame with measurements.
+    calc_correction_factor: Get correction factor for metabolite and label.
+    calc_transition_prob: Get transition probablity for two isotopologues.
+"""
 import os
 import re
 import warnings
@@ -11,7 +18,7 @@ metabolites = None
 
 
 def parse_formula(string):
-    """Parse chemical formula and return dict
+    """Parse chemical formula and return dict.
 
     Parse chemical formula of type C3O3H6 and return dictionary
     of elements and number of atoms.
@@ -26,7 +33,7 @@ def parse_formula(string):
 
 
 def parse_label(string):
-    """Parse label e.g. 5C13N15 or 'No label' and return dict
+    """Parse label e.g.  and return dict.
 
     Parse label e.g. 5C13N15 and return dictionary of elements and number of atoms
     Only support H02 (deuterium), C13, N15 and 'No label'
@@ -53,7 +60,7 @@ def parse_label(string):
 
 
 def sort_labels(labels):
-    """Sort list of metabolite labels by coarse mass
+    """Sort list of metabolite labels by coarse mass.
 
     Sort list of metabolite labels by coarse mass
     (number of neutrons) from lower to higher mass
@@ -74,7 +81,7 @@ def sort_labels(labels):
 
 
 def label_shift_smaller(label1, label2):
-    """Check whether the mass shift of label1 is smaller than label 2
+    """Check whether the mass shift of label1 is smaller than label2.
 
     Calculates if mass shift (e.g. 5 for 5C13 label) is smaller for label1
     than for label2 and returns True if that is the case.
@@ -96,7 +103,7 @@ def label_shift_smaller(label1, label2):
 
 
 def get_isotope_abundance(isotopes_file):
-    """Get abundace of different isotopes
+    """Get abundace of different isotopes.
 
     Parse file with abundance of different isotopes
     :param isotopes_file: str
@@ -116,7 +123,7 @@ def get_isotope_abundance(isotopes_file):
 
 
 def get_metabolite_formula(metabolite, metabolites_file):
-    """Get molecular formula from file
+    """Get molecular formula from file.
 
     Parse and look up molecular formula of metabolite and
     return number of atoms per element
@@ -149,12 +156,13 @@ def get_metabolite_formula(metabolite, metabolites_file):
 def calc_correction_factor(
     metabolite, label=False, isotopes_file=None, metabolites_file=None
 ):
-    """Calculate isotopologue probability for metabolite
+    """Calculate correction factor with metabolite composition defined by label.
 
-    Calculate isotopologue probability for metabolite in metabolites file
+    Label supports only H02 (deuterium), C13, N15 and 'No label'.
     :param metabolite: str of metabolite name
-    .parm isotopologue: False or str of type and number of atoms
-        Only C13 and N15 is supported right now e.g. 5C13
+        Name must be found in metabolites_file
+    :param label: False or str of type and number of atoms
+        E.g. '5C13N15' or 'No label'. False equals to no label
     :param isotopes_file: Path to isotope file
         default location: scripts/isotope_correction/isotopes.csv
     :param metabolites_file: Path to metabolites file
@@ -249,7 +257,7 @@ def calc_correction_factor(
 def calc_transition_prob(
     label1, label2, metabolite_formula, metabolites_file, isotopes_file
 ):
-    """Calculates the probablity between two (un-)labelled isotopologues
+    """Calculate the probablity between two (un-)labelled isotopologues.
 
     :param label1: str
         Type of isotopic label, e.g. 1N15
@@ -320,14 +328,14 @@ def calc_isotopologue_correction(
     metabolites_file=None,
     verbose=False,
 ):
-    """Calculate isotopologue correction factor for metabolite
+    """Calculate isotopologue correction factor for metabolite.
 
     Calculates isotopologue correction factor for metabolite in metabolites file
     Only C13 and N15 is supported as column labels right now e.g. 5C13
     :param  raw_data: pandas DataFrame
         DataFrame of integrated lowest peaks per species vs time
     :param metabolite: str
-        metabilte name
+        metabolite name
     :param subset: list of str or False
         List of column names to use for calculation
     :param exclude_col: list of str
