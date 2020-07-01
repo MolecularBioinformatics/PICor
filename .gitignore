@@ -1,0 +1,25 @@
+# Project
+
+# coverage stuff
+.coverage
+htmlcov
+
+# Python stuff
+__pycache__/
+.ipynb_checkpoints/
+
+# Vim Stuff
+*.swp
+*.swo
+
+
+# Coverage and testing
+htmlcov
+.coverage
+
+# Other
+nohup.out
+.DS_Store
+
+# LibreOffice 
+.~lock.*
