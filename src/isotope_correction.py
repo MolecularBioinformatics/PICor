@@ -60,6 +60,21 @@ def parse_label(string):
     return x
 
 
+def isotope_to_element(label):
+    """Change dict key from isotope to element (e.g. H02 -> H)."""
+    atom_label = {}
+    for elem in label:
+        if elem == "C13":
+            atom_label["C"] = label[elem]
+        elif elem == "N15":
+            atom_label["N"] = label[elem]
+        elif elem == "H02":
+            atom_label["H"] = label[elem]
+        else:
+            raise ValueError("Only H02, C13 and N15 are allowed as isotopic label")
+    return atom_label
+
+
 def sort_labels(labels):
     """Sort list of metabolite labels by coarse mass.
 
@@ -187,15 +202,7 @@ def calc_correction_factor(
     atom_label = {}
     if label:
         label = parse_label(label)
-        for elem in label:
-            if elem == "C13":
-                atom_label["C"] = label[elem]
-            elif elem == "N15":
-                atom_label["N"] = label[elem]
-            elif elem == "H02":
-                atom_label["H"] = label[elem]
-            else:
-                raise ValueError("Only H02, C13 and N15 are allowed as isotopic label")
+        atom_label = isotope_to_element(label)
 
     n_atoms = get_metabolite_formula(metabolite, metabolites_file)
     prob = {}
