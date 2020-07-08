@@ -88,4 +88,17 @@ class TestLabels(unittest.TestCase):
         self.assertFalse(res)
 
 
-# class Test
+class TestCorrectionFactor(unittest.TestCase):
+    """Calculation of correction factor."""
+
+    def test_result_no_label(self):
+        """Result with 'No label'."""
+        res = ic.calc_correction_factor("NAD", label="No label")
+        corr_factor = 1 / res.total[0]
+        self.assertAlmostEqual(corr_factor, 1.33471643)
+
+    def test_result_with_label(self):
+        """Result with complex label."""
+        res = ic.calc_correction_factor("NAD", label="10C131N15")
+        corr_factor = 1 / res.total[0]
+        self.assertAlmostEqual(corr_factor, 1.19422286)
