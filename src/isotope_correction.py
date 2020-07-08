@@ -5,12 +5,13 @@ Functions:
     calc_correction_factor: Get correction factor for metabolite and label.
     calc_transition_prob: Get transition probablity for two isotopologues.
 """
+from math import prod
 import os
 import re
 import warnings
-from numpy import prod
-from scipy.special import binom
+
 import pandas as pd
+from scipy.special import binom
 
 
 abundance = None
