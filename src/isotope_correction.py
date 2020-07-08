@@ -420,11 +420,9 @@ def calc_isotopologue_correction(
     subset = sort_labels(subset)
 
     for label1 in subset:
-        probs = calc_correction_factor(
+        corr = calc_correction_factor(
             metabolite, label1, isotopes_file, metabolites_file
         )
-        # Correction factor is 1/P(Z0)
-        corr = 1 / probs.total[0]
         assert corr >= 1, "Correction factor should be greater or equal 1"
         df[label1] = corr * df[label1]
         if verbose:
