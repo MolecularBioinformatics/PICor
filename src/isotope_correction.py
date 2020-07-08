@@ -169,10 +169,10 @@ def get_metabolite_formula(metabolite, metabolites_file):
     return n_atoms
 
 
-def calc_correction_factor(
+def calc_probability_table(
     metabolite, label=False, isotopes_file=None, metabolites_file=None
 ):
-    """Calculate correction factor with metabolite composition defined by label.
+    """Calculate table of isotopologue probabilities.
 
     Label supports only H02 (deuterium), C13, N15 and 'No label'.
     :param metabolite: str of metabolite name
@@ -260,6 +260,54 @@ def calc_correction_factor(
     p["total"] = pd.Series(isotopologue_prob)
     p.fillna(value=0.0, inplace=True)
     return p
+
+
+def calc_correction_factor(
+    metabolite, label=False, isotopes_file=None, metabolites_file=None
+):
+    """Calculate correction factor with metabolite composition defined by label.
+
+    Label supports only H02 (deuterium), C13, N15 and 'No label'.
+    :param metabolite: str of metabolite name
+        Name must be found in metabolites_file
+    :param label: False or str of type and number of atoms
+        E.g. '5C13N15' or 'No label'. False equals to no label
+    :param isotopes_file: Path to isotope file
+        default location: scripts/isotope_correction/isotopes.csv
+    :param metabolites_file: Path to metabolites file
+        default location: scripts/isotope_correction/metabolites.csv
+    :return: float
+        Correction factor
+    """
+    if not isotopes_file:
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        isotopes_file = os.path.join(dir_path, "isotopes.csv")
+    if not metabolites_file:
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        metabolites_file = os.path.join(dir_path, "metabolites.csv")
+    global abundance
+    if not abundance:
+        abundance = get_isotope_abundance(isotopes_file)
+
+    # Parse label and store information in atom_label dict
+    atom_label = {}
+    if label:
+        label = parse_label(label)
+        atom_label = isotope_to_element(label)
+
+    n_atoms = get_metabolite_formula(metabolite, metabolites_file)
+    prob = {}
+    for elem in n_atoms:
+        n_atom = (
+            n_atoms[elem] - atom_label[elem] if elem in atom_label else n_atoms[elem]
+        )
+        if n_atom < 0:
+            raise ValueError("Too many labelled atoms")
+        prob[elem] = abundance[elem][0] ** n_atom
+    probability = prod(prob.values())
+    return 1 / probability
 
 
 def calc_transition_prob(
