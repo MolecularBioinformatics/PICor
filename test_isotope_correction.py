@@ -99,6 +99,56 @@ class TestCorrectionFactor(unittest.TestCase):
 
     def test_result_with_label(self):
         """Result with complex label."""
-        res = ic.calc_correction_factor("NAD", label="10C131N15")
+        res = ic.calc_correction_factor("NAD", label="10C131N1512H02")
         # corr_factor = 1 / res.total[0]
-        self.assertAlmostEqual(res, 1.19422286)
+        self.assertAlmostEqual(res, 1.19257588)
+
+    def test_result_wrong_label(self):
+        """ValueError with impossible label"""
+        with self.assertRaises(ValueError):
+            ic.calc_correction_factor("NAD", label="100C131N15")
+
+
+class TestTransitionProbability(unittest.TestCase):
+    """Calculation of probability between to isotopologues"""
+
+    def test_result_label1_smaller(self):
+        """Result with label1 being smaller than label2"""
+        label1 = "1N15"
+        label2 = "2N152C13"
+        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
+        res = ic.calc_transition_prob(
+            label1,
+            label2,
+            metabolite,
+            "~/isocordb/Metabolites.dat",
+            "~/isocordb/Isotopes.dat",
+        )
+        self.assertAlmostEqual(res, 0.00040094)
+
+    def test_result_label1_equal(self):
+        """Result with label1 being equal to label2"""
+        label1 = "1N15"
+        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
+        res = ic.calc_transition_prob(
+            label1,
+            label1,
+            metabolite,
+            "~/isocordb/Metabolites.dat",
+            "~/isocordb/Isotopes.dat",
+        )
+        self.assertEqual(res, 0)
+
+    def test_result_label1_larger(self):
+        """Result with label1 being larger than label2"""
+        label1 = "2N152C13"
+        label2 = "1N15"
+        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
+        res = ic.calc_transition_prob(
+            label1,
+            label1,
+            metabolite,
+            "~/isocordb/Metabolites.dat",
+            "~/isocordb/Isotopes.dat",
+        )
+        self.assertEqual(res, 0)
