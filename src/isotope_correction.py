@@ -338,7 +338,7 @@ def calc_transition_prob(
     elif isinstance(metabolite_formula, dict):
         n_atoms = metabolite_formula
     else:
-        raise ValueError(
+        raise TypeError(
             "metabolite_formula must be str (molecular formula) or dict of elements"
         )
     label1 = pd.DataFrame.from_dict(label1, orient="index")
@@ -416,7 +416,8 @@ def calc_isotopologue_correction(
     df = raw_data.copy(deep=True)
     if not subset:
         subset = df.columns
-        subset = list(set(subset) - set(exclude_col))
+        if exclude_col:
+            subset = list(set(subset) - set(exclude_col))
     subset = sort_labels(subset)
 
     for label1 in subset:
