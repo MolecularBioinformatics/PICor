@@ -142,13 +142,41 @@ class TestTransitionProbability(unittest.TestCase):
     def test_result_label1_larger(self):
         """Result with label1 being larger than label2"""
         label1 = "2N152C13"
-        label2 = "1N15"
+        label2 = "2N15"
         metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ic.calc_transition_prob(
             label1,
-            label1,
+            label2,
             metabolite,
             "~/isocordb/Metabolites.dat",
             "~/isocordb/Isotopes.dat",
         )
         self.assertEqual(res, 0)
+
+    def test_result_metabolite_formula(self):
+        """Result with metabolite formula"""
+        label1 = "1N15"
+        label2 = "2N152C13"
+        metabolite = "NAD"
+        res = ic.calc_transition_prob(
+            label1,
+            label2,
+            metabolite,
+            "~/isocordb/Metabolites.dat",
+            "~/isocordb/Isotopes.dat",
+        )
+        self.assertAlmostEqual(res, 0.00049034)
+
+    def test_wrong_type(self):
+        """Type error with list as metabolite"""
+        label1 = "1N15"
+        label2 = "2N152C13"
+        metabolite = ["C30", "Si12", "H2", "N3"]
+        with self.assertRaises(TypeError):
+            ic.calc_transition_prob(
+                label1,
+                label2,
+                metabolite,
+                "~/isocordb/Metabolites.dat",
+                "~/isocordb/Isotopes.dat",
+            )
