@@ -1,6 +1,8 @@
 """Unit tests for isotope correction."""
 import unittest
 
+import pandas as pd
+
 import src.isotope_correction as ic
 
 
@@ -180,3 +182,19 @@ class TestTransitionProbability(unittest.TestCase):
                 "~/isocordb/Metabolites.dat",
                 "~/isocordb/Isotopes.dat",
             )
+
+
+class TestIsotopologueCorrection(unittest.TestCase):
+    """Total Correction Factor for metabolite and DataFrame"""
+
+    def test_result(self):
+        """Result with default values"""
+        df = pd.read_csv("test/test_dataset.csv", index_col=0)
+        df.drop(columns=["dummy column int", "dummy column str"], inplace=True)
+        metabolite = "NAD"
+        res = ic.calc_isotopologue_correction(
+            df,
+            metabolite,
+        )
+        print(res)
+        self.assertAlmostEqual(res, 0.00040094)
