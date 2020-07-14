@@ -3,6 +3,7 @@
 # coverage stuff
 .coverage
 htmlcov
+cov_html
 
 # Python stuff
 __pycache__/
