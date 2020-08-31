@@ -1,4 +1,4 @@
-index column,No label,1C13,4C13 6H02 11N15,dummy column int,dummy column str
+index column,No label,1C13,4C13 6H02 3N15,dummy column int,dummy column str
 0,100,100,30,1,C
 1,200,100,40,2,ER
 2,300,100,50,3,C

@@ -1,4 +1,5 @@
 """Unit tests for isotope correction."""
+from pathlib import Path
 import unittest
 
 import pandas as pd
@@ -93,26 +94,47 @@ class TestLabels(unittest.TestCase):
 class TestCorrectionFactor(unittest.TestCase):
     """Calculation of correction factor."""
 
+    metabolites_file = Path("test/test_metabolites.csv")
+    isotopes_file = Path("test/test_isotopes.csv")
+
     def test_result_no_label(self):
         """Result with 'No label'."""
-        res = ic.calc_correction_factor("NAD", label="No label")
+        res = ic.calc_correction_factor(
+            "Test1",
+            label="No label",
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
+        )
         # corr_factor = 1 / res.total[0]
         self.assertAlmostEqual(res, 1.33471643)
 
     def test_result_with_label(self):
         """Result with complex label."""
-        res = ic.calc_correction_factor("NAD", label="10C131N1512H02")
+        res = ic.calc_correction_factor(
+            "Test1",
+            label="10C131N1512H02",
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
+        )
         # corr_factor = 1 / res.total[0]
         self.assertAlmostEqual(res, 1.19257588)
 
     def test_result_wrong_label(self):
         """ValueError with impossible label"""
         with self.assertRaises(ValueError):
-            ic.calc_correction_factor("NAD", label="100C131N15")
+            ic.calc_correction_factor(
+                "Test1",
+                label="100C131N15",
+                metabolites_file=self.metabolites_file,
+                isotopes_file=self.isotopes_file,
+            )
 
 
 class TestTransitionProbability(unittest.TestCase):
     """Calculation of probability between to isotopologues"""
+
+    metabolites_file = Path("test/test_metabolites.csv")
+    isotopes_file = Path("test/test_isotopes.csv")
 
     def test_result_label1_smaller(self):
         """Result with label1 being smaller than label2"""
@@ -123,8 +145,8 @@ class TestTransitionProbability(unittest.TestCase):
             label1,
             label2,
             metabolite,
-            "~/isocordb/Metabolites.dat",
-            "~/isocordb/Isotopes.dat",
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
         )
         self.assertAlmostEqual(res, 0.00040094)
 
@@ -136,8 +158,8 @@ class TestTransitionProbability(unittest.TestCase):
             label1,
             label1,
             metabolite,
-            "~/isocordb/Metabolites.dat",
-            "~/isocordb/Isotopes.dat",
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
         )
         self.assertEqual(res, 0)
 
@@ -150,8 +172,8 @@ class TestTransitionProbability(unittest.TestCase):
             label1,
             label2,
             metabolite,
-            "~/isocordb/Metabolites.dat",
-            "~/isocordb/Isotopes.dat",
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
         )
         self.assertEqual(res, 0)
 
@@ -159,13 +181,13 @@ class TestTransitionProbability(unittest.TestCase):
         """Result with metabolite formula"""
         label1 = "1N15"
         label2 = "2N152C13"
-        metabolite = "NAD"
+        metabolite = "Test1"
         res = ic.calc_transition_prob(
             label1,
             label2,
             metabolite,
-            "~/isocordb/Metabolites.dat",
-            "~/isocordb/Isotopes.dat",
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
         )
         self.assertAlmostEqual(res, 0.00049034)
 
@@ -179,22 +201,29 @@ class TestTransitionProbability(unittest.TestCase):
                 label1,
                 label2,
                 metabolite,
-                "~/isocordb/Metabolites.dat",
-                "~/isocordb/Isotopes.dat",
+                metabolites_file=self.metabolites_file,
+                isotopes_file=self.isotopes_file,
             )
 
 
 class TestIsotopologueCorrection(unittest.TestCase):
     """Total Correction Factor for metabolite and DataFrame"""
 
+    metabolites_file = Path("test/test_metabolites.csv")
+    isotopes_file = Path("test/test_isotopes.csv")
+
     def test_result(self):
         """Result with default values"""
-        df = pd.read_csv("test/test_dataset.csv", index_col=0)
-        df.drop(columns=["dummy column int", "dummy column str"], inplace=True)
-        metabolite = "NAD"
+        data = pd.read_csv(Path("test/test_dataset.csv"), index_col=0)
+        data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
+        metabolite = "Test1"
         res = ic.calc_isotopologue_correction(
-            df,
+            data,
             metabolite,
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
         )
-        print(res)
-        self.assertAlmostEqual(res, 0.00040094)
+        data_corrected = pd.read_csv(
+            Path("test/test_dataset_corrected.csv"), index_col=0
+        )
+        pd.testing.assert_frame_equal(data_corrected, res)
