@@ -148,7 +148,7 @@ class TestTransitionProbability(unittest.TestCase):
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
         )
-        self.assertAlmostEqual(res, 0.00040094)
+        self.assertAlmostEqual(res, 0.00026729)
 
     def test_result_label1_equal(self):
         """Result with label1 being equal to label2"""
@@ -189,7 +189,7 @@ class TestTransitionProbability(unittest.TestCase):
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
         )
-        self.assertAlmostEqual(res, 0.00049034)
+        self.assertAlmostEqual(res, 0.00042029)
 
     def test_wrong_type(self):
         """Type error with list as metabolite"""
