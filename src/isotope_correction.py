@@ -14,8 +14,8 @@ import pandas as pd
 from scipy.special import binom
 
 
-abundance = None
-metabolites = None
+ABUNDANCE = None
+METABOLITES = None
 
 
 def parse_formula(string):
@@ -29,8 +29,7 @@ def parse_formula(string):
     :return : Dict of str and int
     """
     elements = re.findall(r"([A-Z][a-z]*)(\d*)", string)
-    x = {elem: int(num) if num != "" else 1 for elem, num in elements}
-    return x
+    return {elem: int(num) if num != "" else 1 for elem, num in elements}
 
 
 def parse_label(string):
@@ -53,11 +52,11 @@ def parse_label(string):
         return {}
     allowed_isotopes = ["H02", "C13", "N15"]
     label = re.findall(r"(\d*)([A-Z][a-z]*\d\d)", string)
-    x = {elem: int(num) if num != "" else 1 for num, elem in label}
-    if not set(x).issubset(allowed_isotopes) or not x:
+    label_dict = {elem: int(num) if num != "" else 1 for num, elem in label}
+    if not set(label_dict).issubset(allowed_isotopes) or not label_dict:
         # Check for empty list and only allowed isotopes
         raise ValueError("Label should be H02, C13, N15 or 'No label'")
-    return x
+    return label_dict
 
 
 def isotope_to_element(label):
@@ -151,21 +150,23 @@ def get_metabolite_formula(metabolite, metabolites_file):
     :return: dict
         Elements and number
     """
-    global metabolites
-    if not isinstance(metabolites, pd.DataFrame):
-        metabolites = pd.read_csv(metabolites_file, sep="\t", na_filter=False)
-        metabolites["formula"] = metabolites["formula"].apply(parse_formula)
-        metabolites.set_index("name", drop=True, inplace=True)
+    global METABOLITES
+    if not isinstance(METABOLITES, pd.DataFrame):
+        METABOLITES = pd.read_csv(metabolites_file, sep="\t", na_filter=False)
+        METABOLITES["formula"] = METABOLITES["formula"].apply(parse_formula)
+        METABOLITES.set_index("name", drop=True, inplace=True)
 
     try:
         n_atoms = {}
-        n_atoms["C"] = metabolites.loc[metabolite].formula["C"]
-        n_atoms["N"] = metabolites.loc[metabolite].formula["N"]
-        n_atoms["O"] = metabolites.loc[metabolite].formula["O"]
-        n_atoms["H"] = metabolites.loc[metabolite].formula["H"]
-    except KeyError as er:
-        met_key = re.search(r"\[\w*?\]", str(er))[0]
-        raise KeyError(f"Metabolite {met_key} couldn't be found in metabolites file")
+        n_atoms["C"] = METABOLITES.loc[metabolite].formula["C"]
+        n_atoms["N"] = METABOLITES.loc[metabolite].formula["N"]
+        n_atoms["O"] = METABOLITES.loc[metabolite].formula["O"]
+        n_atoms["H"] = METABOLITES.loc[metabolite].formula["H"]
+    except KeyError as error:
+        met_key = re.search(r"\[\w*?\]", str(error))[0]
+        raise KeyError(
+            f"Metabolite {met_key} couldn't be found in metabolites file"
+        ) from error
     return n_atoms
 
 
@@ -194,9 +195,9 @@ def calc_probability_table(
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         metabolites_file = os.path.join(dir_path, "metabolites.csv")
-    global abundance
-    if not abundance:
-        abundance = get_isotope_abundance(isotopes_file)
+    global ABUNDANCE
+    if not ABUNDANCE:
+        ABUNDANCE = get_isotope_abundance(isotopes_file)
 
     # Parse label and store information in atom_label dict
     atom_label = {}
@@ -215,7 +216,7 @@ def calc_probability_table(
             n_atom = n_atoms[elem] - atom_label[elem]
             if n_atom < 0:
                 raise ValueError("Too many labelled atoms")
-        abund = abundance[elem]
+        abund = ABUNDANCE[elem]
         p = {}
         # Calculation for elements with 2 Isotopes
         if len(abund) == 2:
@@ -287,9 +288,9 @@ def calc_correction_factor(
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         metabolites_file = os.path.join(dir_path, "metabolites.csv")
-    global abundance
-    if not abundance:
-        abundance = get_isotope_abundance(isotopes_file)
+    global ABUNDANCE
+    if not ABUNDANCE:
+        ABUNDANCE = get_isotope_abundance(isotopes_file)
 
     # Parse label and store information in atom_label dict
     atom_label = {}
@@ -305,7 +306,7 @@ def calc_correction_factor(
         )
         if n_atom < 0:
             raise ValueError("Too many labelled atoms")
-        prob[elem] = abundance[elem][0] ** n_atom
+        prob[elem] = ABUNDANCE[elem][0] ** n_atom
     probability = prod(prob.values())
     return 1 / probability
 
@@ -351,9 +352,9 @@ def calc_transition_prob(
     if difference_labels.lt(0).any():
         return 0
 
-    global abundance
-    if not abundance:
-        abundance = get_isotope_abundance(isotopes_file)
+    global ABUNDANCE
+    if not ABUNDANCE:
+        ABUNDANCE = get_isotope_abundance(isotopes_file)
 
     prob = []
     for elem in difference_labels.index:
@@ -364,15 +365,15 @@ def calc_transition_prob(
         n_elem_2 = label2.loc[elem, 0]
         n_unlab = n_atoms[elem] - n_elem_2
         n_label = difference_labels[elem]
-        abun_unlab = abundance[elem][0]
-        abun_lab = abundance[elem][1]
+        abun_unlab = ABUNDANCE[elem][0]
+        abun_lab = ABUNDANCE[elem][1]
         if n_label == 0:
             continue
 
-        pr = binom((n_atoms[elem] - n_elem_1), n_label)
-        pr *= abun_lab ** n_label
-        pr *= abun_unlab ** n_unlab
-        prob.append(pr)
+        trans_pr = binom((n_atoms[elem] - n_elem_1), n_label)
+        trans_pr *= abun_lab ** n_label
+        trans_pr *= abun_unlab ** n_unlab
+        prob.append(trans_pr)
 
     # Prob is product of single probabilities
     prob_total = prod(prob)
@@ -418,9 +419,9 @@ def calc_isotopologue_correction(
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         metabolites_file = os.path.join(dir_path, "metabolites.csv")
-    df = raw_data.copy(deep=True)
+    data = raw_data.copy(deep=True)
     if not subset:
-        subset = df.columns
+        subset = data.columns
         if exclude_col:
             subset = list(set(subset) - set(exclude_col))
     subset = sort_labels(subset)
@@ -430,7 +431,7 @@ def calc_isotopologue_correction(
             metabolite, label1, isotopes_file, metabolites_file
         )
         assert corr >= 1, "Correction factor should be greater or equal 1"
-        df[label1] = corr * df[label1]
+        data[label1] = corr * data[label1]
         if verbose:
             print(f"Correction factor {label1}: {corr}")
         for label2 in subset:
@@ -438,8 +439,8 @@ def calc_isotopologue_correction(
                 prob = calc_transition_prob(
                     label1, label2, metabolite, metabolites_file, isotopes_file
                 )
-                df[label2] = df[label2] - prob * df[label1]
-                df[label2].clip(lower=0, inplace=True)
+                data[label2] = data[label2] - prob * data[label1]
+                data[label2].clip(lower=0, inplace=True)
                 if verbose:
                     print(f"Transition prob {label1} -> {label2}: {prob}")
-    return df
+    return data
