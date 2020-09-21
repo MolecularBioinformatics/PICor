@@ -260,6 +260,8 @@ def calc_probability_table(
 
 def fwhm(m_cal, m_z, resolution):
     """Calculate Full width half maximum (FWHM)."""
+    if m_cal < 0 or m_z <= 0 or resolution <= 0:
+        raise ValueError("Arguments must be positive")
     return m_z ** (3 / 2) / (resolution * m_cal ** 0.5)
 
 
@@ -277,8 +279,10 @@ def calc_min_mass_diff(mass, charge, m_cal, resolution):
         Resolution
     :returns: float
     """
-    m_z = mass / charge
-    return 1.66 * charge * fwhm(m_cal, m_z, resolution)
+    if mass < 0:
+        raise ValueError("'mass' must be positive.")
+    m_z = abs(mass / charge)
+    return 1.66 * abs(charge) * fwhm(m_cal, m_z, resolution)
 
 
 def assign_light_isotopes(metabolite_series):
@@ -348,7 +352,7 @@ def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series):
     return mass
 
 
-def is_isotologue_overlapp(
+def is_isotologue_overlap(
     label1, label2, metabolite_name, min_mass_diff, isotope_mass_series
 ):
     """Return True if label1 and label2 are too close to detection limit.
