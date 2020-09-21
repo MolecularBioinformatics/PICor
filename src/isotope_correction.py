@@ -163,9 +163,8 @@ def get_metabolite_formula(metabolite, metabolites_file):
         n_atoms["O"] = METABOLITES.loc[metabolite].formula["O"]
         n_atoms["H"] = METABOLITES.loc[metabolite].formula["H"]
     except KeyError as error:
-        met_key = re.search(r"\[\w*?\]", str(error))[0]
         raise KeyError(
-            f"Metabolite {met_key} couldn't be found in metabolites file"
+            f"Metabolite {error} couldn't be found in metabolites file"
         ) from error
     return n_atoms
 
