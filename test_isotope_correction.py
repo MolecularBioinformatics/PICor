@@ -279,3 +279,11 @@ class TestMassCalculations(unittest.TestCase):
             "14C13", "14H02", "Test1", 0.04, isotope_mass_series
         )
         self.assertFalse(res)
+
+    def test_coarse_mass_difference(self):
+        """Difference in nucleons."""
+        isotope_mass_series = ic.get_isotope_mass_series(self.isotopes_file)
+        res = ic.calc_coarse_mass_difference(
+            "No label", "5C13 3N15 2H02", isotope_mass_series
+        )
+        self.assertEqual(res, 10)

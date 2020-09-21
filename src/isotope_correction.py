@@ -33,7 +33,7 @@ def parse_formula(string):
 
 
 def parse_label(string):
-    """Parse label e.g.  and return dict.
+    """Parse label e.g. "3C13 2H02"  and return dict.
 
     Parse label e.g. 5C13N15 and return dictionary of elements and number of atoms
     Only support H02 (deuterium), C13, N15 and 'No label'
@@ -350,6 +350,13 @@ def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series):
     formula_isotopes = pd.concat([light_isotopes, label])
     mass = isotope_mass_series.multiply(formula_isotopes).dropna().sum()
     return mass
+
+
+def calc_coarse_mass_difference(label1, label2, isotope_mass_series):
+    """Calculate difference in nucleons (e.g. 2 between H20 and D20)."""
+    label1 = parse_label(label1)
+    label2 = parse_label(label2)
+    return abs(sum(label1.values()) - sum(label2.values()))
 
 
 def is_isotologue_overlap(
