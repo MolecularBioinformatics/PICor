@@ -130,7 +130,7 @@ def get_isotope_abundance(isotopes_file):
     isotopes.set_index("element", drop=True, inplace=True)
 
     abundance = {}
-    for elem in isotopes.loc[["C", "N", "O", "H"]].itertuples():
+    for elem in isotopes.itertuples():
         if elem.Index not in abundance:
             abundance[elem.Index] = []
         abundance[elem.Index].append(elem.abundance)
@@ -157,11 +157,7 @@ def get_metabolite_formula(metabolite, metabolites_file):
         METABOLITES.set_index("name", drop=True, inplace=True)
 
     try:
-        n_atoms = {}
-        n_atoms["C"] = METABOLITES.loc[metabolite].formula["C"]
-        n_atoms["N"] = METABOLITES.loc[metabolite].formula["N"]
-        n_atoms["O"] = METABOLITES.loc[metabolite].formula["O"]
-        n_atoms["H"] = METABOLITES.loc[metabolite].formula["H"]
+        n_atoms = METABOLITES.loc[metabolite].formula
     except KeyError as error:
         raise KeyError(
             f"Metabolite {error} couldn't be found in metabolites file"

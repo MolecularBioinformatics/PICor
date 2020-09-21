@@ -1,4 +1,5 @@
 """Unit tests for isotope correction."""
+
 from pathlib import Path
 import unittest
 
@@ -227,3 +228,15 @@ class TestIsotopologueCorrection(unittest.TestCase):
             Path("test/test_dataset_corrected.csv"), index_col=0
         )
         pd.testing.assert_frame_equal(data_corrected, res)
+
+
+class TestMassCalculations(unittest.TestCase):
+    """Molecule mass and minimum mass difference"""
+
+    metabolites_file = Path("test/test_metabolites.csv")
+    isotopes_file = Path("test/test_isotopes.csv")
+
+    def test_mass_nolabel(self):
+        isotope_mass_series = ic.get_isotope_mass_series(self.isotopes_file)
+        res = ic.calc_isotopologue_mass("Test1", "No label", isotope_mass_series)
+        self.assertAlmostEqual(res, 664.116947, places=5)
