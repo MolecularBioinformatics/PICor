@@ -137,7 +137,7 @@ def get_isotope_abundance(isotopes_file):
     return abundance
 
 
-def get_metabolite_formula(metabolite, metabolites_file):
+def get_metabolite_formula(metabolite, metabolites_file, isotopes_file):
     """Get molecular formula from file.
 
     Parse and look up molecular formula of metabolite and
@@ -147,9 +147,14 @@ def get_metabolite_formula(metabolite, metabolites_file):
     :param metabolites_file: str
         File path to isotopes file
         tab-separated csv with name and formula columns
+    :param isotopes_file: Path to isotope file
+        File path to isotopes file, tab separated
     :return: dict
         Elements and number
     """
+    global ABUNDANCE
+    if not ABUNDANCE:
+        ABUNDANCE = get_isotope_abundance(isotopes_file)
     global METABOLITES
     if not isinstance(METABOLITES, pd.DataFrame):
         METABOLITES = pd.read_csv(metabolites_file, sep="\t", na_filter=False)
@@ -162,6 +167,8 @@ def get_metabolite_formula(metabolite, metabolites_file):
         raise KeyError(
             f"Metabolite {error} couldn't be found in metabolites file"
         ) from error
+    if not all(element in ABUNDANCE for element in n_atoms):
+        raise ValueError("Unknown element in metabolite")
     return n_atoms
 
 
@@ -200,7 +207,7 @@ def calc_probability_table(
         label = parse_label(label)
         atom_label = isotope_to_element(label)
 
-    n_atoms = get_metabolite_formula(metabolite, metabolites_file)
+    n_atoms = get_metabolite_formula(metabolite, metabolites_file, isotopes_file)
     prob = {}
     for elem in n_atoms:
         start_count = 0
@@ -328,7 +335,7 @@ def get_isotope_mass_series(isotopes_file):
     )
 
 
-def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series):
+def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series, isotopes_file):
     """Calculate mass of isotopologue.
 
     Given the metabolite name and label composition, return mass in atomic units.
@@ -343,7 +350,8 @@ def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series):
     """
     label = pd.Series(parse_label(label), dtype="int64")
     metab = pd.Series(
-        get_metabolite_formula(metabolite_name, "src/metabolites.csv"), dtype="int64"
+        get_metabolite_formula(metabolite_name, "src/metabolites.csv", isotopes_file),
+        dtype="int64",
     )
     metab = assign_light_isotopes(metab)
     light_isotopes = subtract_label(metab, label)
@@ -360,15 +368,19 @@ def calc_coarse_mass_difference(label1, label2, isotope_mass_series):
 
 
 def is_isotologue_overlap(
-    label1, label2, metabolite_name, min_mass_diff, isotope_mass_series
+    label1, label2, metabolite_name, min_mass_diff, isotope_mass_series, isotopes_file
 ):
     """Return True if label1 and label2 are too close to detection limit.
 
     Checks whether two isotopologues defined by label and metabolite name
     are below miniumum resolved mass difference.
     """
-    mass1 = calc_isotopologue_mass(metabolite_name, label1, isotope_mass_series)
-    mass2 = calc_isotopologue_mass(metabolite_name, label2, isotope_mass_series)
+    mass1 = calc_isotopologue_mass(
+        metabolite_name, label1, isotope_mass_series, isotopes_file
+    )
+    mass2 = calc_isotopologue_mass(
+        metabolite_name, label2, isotope_mass_series, isotopes_file
+    )
     return abs(mass1 - mass2) < min_mass_diff
 
 
@@ -407,7 +419,7 @@ def calc_correction_factor(
         label = parse_label(label)
         atom_label = isotope_to_element(label)
 
-    n_atoms = get_metabolite_formula(metabolite, metabolites_file)
+    n_atoms = get_metabolite_formula(metabolite, metabolites_file, isotopes_file)
     prob = {}
     for elem in n_atoms:
         n_atom = (
@@ -444,7 +456,9 @@ def calc_transition_prob(
     label2 = parse_label(label2)
 
     if isinstance(metabolite_formula, str):
-        n_atoms = get_metabolite_formula(metabolite_formula, metabolites_file)
+        n_atoms = get_metabolite_formula(
+            metabolite_formula, metabolites_file, isotopes_file
+        )
     elif isinstance(metabolite_formula, dict):
         n_atoms = metabolite_formula
     else:
