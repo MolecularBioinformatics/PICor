@@ -360,11 +360,14 @@ def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series, isotopes
     return mass
 
 
-def calc_coarse_mass_difference(label1, label2, isotope_mass_series):
-    """Calculate difference in nucleons (e.g. 2 between H20 and D20)."""
+def calc_coarse_mass_difference(label1, label2):
+    """Calculate difference in nucleons (e.g. 2 between H20 and D20).
+    
+    nucleons(label2) - nucleons(label1)
+    """
     label1 = parse_label(label1)
     label2 = parse_label(label2)
-    return abs(sum(label1.values()) - sum(label2.values()))
+    return sum(label2.values()) - sum(label1.values())
 
 
 def is_isotologue_overlap(
