@@ -102,15 +102,17 @@ def label_shift_smaller(label1, label2):
     than for label2 and returns True if that is the case.
     Only support H02 (deuterium),  C13 and N15 as labels.
     label can also be "No label" or something similar.
-    :param label1: str
+    :param label1: str or dict
         Label of isotopologue 1
-    :param label2: str
+    :param label2: str or dict
         Label of isotopologue 2
     :return: Boolean
         True if label 1 is smaller than label 2, otherwise False
     """
-    label1 = parse_label(label1)
-    label2 = parse_label(label2)
+    if isinstance(label1, str):
+        label1 = parse_label(label1)
+    if isinstance(label2, str):
+        label2 = parse_label(label2)
     shift_label1 = sum(label1.values())
     shift_label2 = sum(label2.values())
 
@@ -440,9 +442,9 @@ def calc_transition_prob(
 ):
     """Calculate the probablity between two (un-)labelled isotopologues.
 
-    :param label1: str
+    :param label1: str or dict
         Type of isotopic label, e.g. 1N15
-    :param label1: str
+    :param label2: str or dict
         Type of isotopic label, e.g. 10C1301N15
     :param metabolite_formula: str or dict
         Molecular formula or dict of elements and number
@@ -453,10 +455,13 @@ def calc_transition_prob(
     :return: float
         Transition probability
     """
+    if isinstance(label1, str):
+        label1 = parse_label(label1)
+    if isinstance(label2, str):
+        label2 = parse_label(label2)
+
     if not label_shift_smaller(label1, label2):
         return 0
-    label1 = parse_label(label1)
-    label2 = parse_label(label2)
 
     if isinstance(metabolite_formula, str):
         n_atoms = get_metabolite_formula(
