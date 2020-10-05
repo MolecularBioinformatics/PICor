@@ -267,33 +267,6 @@ def calc_probability_table(
     return p
 
 
-def fwhm(m_cal, m_z, resolution):
-    """Calculate Full width half maximum (FWHM)."""
-    if m_cal < 0 or m_z <= 0 or resolution <= 0:
-        raise ValueError("Arguments must be positive")
-    return m_z ** (3 / 2) / (resolution * m_cal ** 0.5)
-
-
-def calc_min_mass_diff(mass, charge, m_cal, resolution):
-    """Calculate minimal resolvable mass difference.
-
-    For m and z return minimal mass difference that ca be resolved properly.
-    :param mass: float
-        Mass of molecule
-    :param charge: int
-        Charge of molecule
-    :param m_cal: float
-        Mass for which resolition has been determined
-    :param resolution: float
-        Resolution
-    :returns: float
-    """
-    if mass < 0:
-        raise ValueError("'mass' must be positive.")
-    m_z = abs(mass / charge)
-    return 1.66 * abs(charge) * fwhm(m_cal, m_z, resolution)
-
-
 def assign_light_isotopes(metabolite_series):
     """Replace all element names with light isotopes ("C" -> "C13")."""
     result = metabolite_series.rename(
@@ -335,58 +308,6 @@ def get_isotope_mass_series(isotopes_file):
         index_col="isotope",
         squeeze=True,
     )
-
-
-def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series, isotopes_file):
-    """Calculate mass of isotopologue.
-
-    Given the metabolite name and label composition, return mass in atomic units.
-    :param metabolite_name: str
-        Name as in metabolite_file
-    :param label: str
-        "No label" or formula, can contain whitespaces
-    :param isotope_mass_series: pandas Series
-        Isotope name (e.g. 'H02') as index and mass as values
-        Output of 'get_isotope_mass_series'
-    :returns: float
-    """
-    label = pd.Series(parse_label(label), dtype="int64")
-    metab = pd.Series(
-        get_metabolite_formula(metabolite_name, "src/metabolites.csv", isotopes_file),
-        dtype="int64",
-    )
-    metab = assign_light_isotopes(metab)
-    light_isotopes = subtract_label(metab, label)
-    formula_isotopes = pd.concat([light_isotopes, label])
-    mass = isotope_mass_series.multiply(formula_isotopes).dropna().sum()
-    return mass
-
-
-def calc_coarse_mass_difference(label1, label2):
-    """Calculate difference in nucleons (e.g. 2 between H20 and D20).
-    
-    nucleons(label2) - nucleons(label1)
-    """
-    label1 = parse_label(label1)
-    label2 = parse_label(label2)
-    return sum(label2.values()) - sum(label1.values())
-
-
-def is_isotologue_overlap(
-    label1, label2, metabolite_name, min_mass_diff, isotope_mass_series, isotopes_file
-):
-    """Return True if label1 and label2 are too close to detection limit.
-
-    Checks whether two isotopologues defined by label and metabolite name
-    are below miniumum resolved mass difference.
-    """
-    mass1 = calc_isotopologue_mass(
-        metabolite_name, label1, isotope_mass_series, isotopes_file
-    )
-    mass2 = calc_isotopologue_mass(
-        metabolite_name, label2, isotope_mass_series, isotopes_file
-    )
-    return abs(mass1 - mass2) < min_mass_diff
 
 
 def calc_correction_factor(
