@@ -3,8 +3,6 @@
 from pathlib import Path
 import unittest
 
-import pandas as pd
-
 import src.resolution_correction as rc
 
 
@@ -66,6 +64,5 @@ class TestMassCalculations(unittest.TestCase):
 
     def test_coarse_mass_difference(self):
         """Difference in nucleons."""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         res = rc.calc_coarse_mass_difference("No label", "5C13 3N15 2H02",)
         self.assertEqual(res, 10)

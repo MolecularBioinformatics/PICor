@@ -70,7 +70,7 @@ class TestLabels(unittest.TestCase):
     def test_get_metabolite_formula_invalid_element(self):
         """Raise ValueError with invalid element in metabolite formula."""
         with self.assertRaises(ValueError):
-            res = ic.get_metabolite_formula(
+            ic.get_metabolite_formula(
                 "Test3", self.metabolites_file, self.isotopes_file
             )
 

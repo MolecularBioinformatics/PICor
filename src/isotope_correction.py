@@ -91,7 +91,7 @@ def sort_labels(labels):
         mass = parse_label(label)
         masses[label] = sum(mass.values())
     sorted_masses = sorted(masses.items(), key=lambda kv: kv[1])
-    sorted_labels = [l[0] for l in sorted_masses]
+    sorted_labels = [lab[0] for lab in sorted_masses]
     return sorted_labels
 
 
