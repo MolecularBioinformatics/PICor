@@ -153,9 +153,9 @@ def warn_indirect_overlap(
 def calc_indirect_overlap_prob(
     label1, label2, metabolite_name, min_mass_diff, metabolites_file, isotopes_file
 ):
-    """Calculate probability for overlap caused by random C13 incoporation.
+    """Calculate probability for overlap caused by random H02 and C13 incoporation.
 
-    Only C13 attribution is considered so far.
+    Only C13 and H02 attributions are considered so far.
     :param label1: str
         "No label" or formula e.g. "1C13 2H02"
     :param label2: str
@@ -179,26 +179,35 @@ def calc_indirect_overlap_prob(
         return 0
     label1 = parse_label(label1)
     label2 = parse_label(label2)
-    label_trans = {"C13": coarse_mass_difference}
     label1_series = pd.Series(label1, dtype="float64")
     label2_series = pd.Series(label2, dtype="float64")
-    label_trans_series = pd.Series(label_trans, dtype="float64")
-    label1_mod = dict(label1_series.add(label_trans_series, fill_value=0))
+
     # Check if standard transition is possible
     label_diff = label2_series.sub(label1_series, fill_value=0)
     if label_diff.ge(0).all():
         return 0
-    if is_isotologue_overlap(
-        label1_mod,
-        label2,
-        metabolite_name,
-        min_mass_diff,
-        isotope_mass_series,
-        metabolites_file,
-        isotopes_file,
-    ):
-        prob = calc_label_diff_prob(label1, label_trans, n_atoms, isotopes_file)
-        return prob
+
+    probs = {}
+    for n_c in range(0, coarse_mass_difference + 1):
+        # breakpoint()
+        n_h = coarse_mass_difference - n_c
+        label_trans = {"C13": n_c, "H02": n_h}
+        label_trans_series = pd.Series(label_trans, dtype="float64")
+        label1_mod = dict(label1_series.add(label_trans_series, fill_value=0))
+        if is_isotologue_overlap(
+            label1_mod,
+            label2,
+            metabolite_name,
+            min_mass_diff,
+            isotope_mass_series,
+            metabolites_file,
+            isotopes_file,
+        ):
+            probs[n_c] = calc_label_diff_prob(
+                label1, label_trans, n_atoms, isotopes_file
+            )
+    prob_total = sum(probs.values())
+    return prob_total
 
 
 def warn_direct_overlap(
