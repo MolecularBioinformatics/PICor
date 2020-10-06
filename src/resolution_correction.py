@@ -128,6 +128,11 @@ def warn_indirect_overlap(
             label1_mod = dict(
                 pd.Series(label1).add(pd.Series(label_trans), fill_value=0)
             )
+            # Check if standard transition is possible
+            label_diff = pd.Series(label2).sub(pd.Series(label1), fill_value=0)
+            if label_diff.ge(0).all():
+                continue
+
             if is_isotologue_overlap(
                 label1_mod,
                 label2,
