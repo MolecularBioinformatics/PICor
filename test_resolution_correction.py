@@ -66,3 +66,32 @@ class TestMassCalculations(unittest.TestCase):
         """Difference in nucleons."""
         res = rc.calc_coarse_mass_difference("No label", "5C13 3N15 2H02",)
         self.assertEqual(res, 10)
+
+
+class TestOverlapWarnings(unittest.TestCase):
+    """Overlap warnings."""
+
+    metabolites_file = Path("test/test_metabolites.csv")
+    isotopes_file = Path("test/test_isotopes.csv")
+
+    def test_direct_overlap_warn(self):
+        """Warning with overlapping labels."""
+        with self.assertWarns(UserWarning):
+            rc.warn_direct_overlap(
+                ["4H02", "4C13"],
+                "Test1",
+                0.05,
+                self.metabolites_file,
+                self.isotopes_file,
+            )
+
+    def test_indirect_overlap_warn(self):
+        """Warning with indirectly overlapping labels."""
+        with self.assertWarns(UserWarning):
+            rc.warn_indirect_overlap(
+                ["3H02", "4C13"],
+                "Test1",
+                0.05,
+                self.metabolites_file,
+                self.isotopes_file,
+            )
