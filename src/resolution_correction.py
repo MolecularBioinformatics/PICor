@@ -245,7 +245,7 @@ def calc_label_diff_prob(label1, difference_labels, n_atoms, isotopes_file):
             n_elem_1 = 0
         elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
 
-        n_unlab = n_atoms[elem] - n_elem_1
+        n_unlab = n_atoms[elem] - n_elem_1 - n_label
         abun_unlab = ABUNDANCE[elem][0]
         abun_lab = ABUNDANCE[elem][1]
         if n_label == 0:
