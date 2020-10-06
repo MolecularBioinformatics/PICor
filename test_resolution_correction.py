@@ -16,7 +16,11 @@ class TestMassCalculations(unittest.TestCase):
         """Molecule mass calculation without label."""
         isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         res = rc.calc_isotopologue_mass(
-            "Test1", "No label", isotope_mass_series, self.isotopes_file
+            "Test1",
+            "No label",
+            isotope_mass_series,
+            self.metabolites_file,
+            self.isotopes_file,
         )
         self.assertAlmostEqual(res, 664.116947, places=5)
 
@@ -24,7 +28,11 @@ class TestMassCalculations(unittest.TestCase):
         """Molecule mass calculation with correct label."""
         isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         res = rc.calc_isotopologue_mass(
-            "Test1", "15C13", isotope_mass_series, self.isotopes_file
+            "Test1",
+            "15C13",
+            isotope_mass_series,
+            self.metabolites_file,
+            self.isotopes_file,
         )
         self.assertAlmostEqual(res, 679.167270, places=5)
 
@@ -33,7 +41,11 @@ class TestMassCalculations(unittest.TestCase):
         isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         with self.assertRaises(ValueError):
             rc.calc_isotopologue_mass(
-                "Test1", "55C13", isotope_mass_series, self.isotopes_file
+                "Test1",
+                "55C13",
+                isotope_mass_series,
+                self.metabolites_file,
+                self.isotopes_file,
             )
 
     def test_calc_min_mass_diff_result(self):
@@ -50,7 +62,13 @@ class TestMassCalculations(unittest.TestCase):
         """Overlapping isotopologues"""
         isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         res = rc.is_isotologue_overlap(
-            "5C13", "4C13 1H02", "Test1", 0.04, isotope_mass_series, self.isotopes_file,
+            "5C13",
+            "4C13 1H02",
+            "Test1",
+            0.04,
+            isotope_mass_series,
+            self.metabolites_file,
+            self.isotopes_file,
         )
         self.assertTrue(res)
 
@@ -58,7 +76,13 @@ class TestMassCalculations(unittest.TestCase):
         """Non overlapping isotopologues"""
         isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         res = rc.is_isotologue_overlap(
-            "14C13", "14H02", "Test1", 0.04, isotope_mass_series, self.isotopes_file,
+            "14C13",
+            "14H02",
+            "Test1",
+            0.04,
+            isotope_mass_series,
+            self.metabolites_file,
+            self.isotopes_file,
         )
         self.assertFalse(res)
 

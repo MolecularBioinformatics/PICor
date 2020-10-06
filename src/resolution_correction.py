@@ -53,7 +53,9 @@ def calc_min_mass_diff(mass, charge, mz_cal, resolution):
     return 1.66 * abs(charge) * fwhm(mz_cal, mz, resolution)
 
 
-def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series, isotopes_file):
+def calc_isotopologue_mass(
+    metabolite_name, label, isotope_mass_series, metabolites_file, isotopes_file
+):
     """Calculate mass of isotopologue.
 
     Given the metabolite name and label composition, return mass in atomic units.
@@ -74,7 +76,7 @@ def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series, isotopes
         raise ValueError("label must be str or dict")
     label = pd.Series(label_dict, dtype="int64")
     metab = pd.Series(
-        get_metabolite_formula(metabolite_name, "src/metabolites.csv", isotopes_file),
+        get_metabolite_formula(metabolite_name, metabolites_file, isotopes_file),
         dtype="int64",
     )
     metab = assign_light_isotopes(metab)
@@ -95,7 +97,13 @@ def calc_coarse_mass_difference(label1, label2):
 
 
 def is_isotologue_overlap(
-    label1, label2, metabolite_name, min_mass_diff, isotope_mass_series, isotopes_file
+    label1,
+    label2,
+    metabolite_name,
+    min_mass_diff,
+    isotope_mass_series,
+    metabolites_file,
+    isotopes_file,
 ):
     """Return True if label1 and label2 are too close to detection limit.
 
@@ -103,10 +111,10 @@ def is_isotologue_overlap(
     are below miniumum resolved mass difference.
     """
     mass1 = calc_isotopologue_mass(
-        metabolite_name, label1, isotope_mass_series, isotopes_file
+        metabolite_name, label1, isotope_mass_series, metabolites_file, isotopes_file
     )
     mass2 = calc_isotopologue_mass(
-        metabolite_name, label2, isotope_mass_series, isotopes_file
+        metabolite_name, label2, isotope_mass_series, metabolites_file, isotopes_file
     )
     return abs(mass1 - mass2) < min_mass_diff
 
@@ -171,6 +179,7 @@ def calc_indirect_overlap_prob(
         metabolite_name,
         min_mass_diff,
         isotope_mass_series,
+        metabolites_file,
         isotopes_file,
     ):
         prob = calc_label_diff_prob(label1, label_trans, n_atoms, isotopes_file)
@@ -190,6 +199,7 @@ def warn_direct_overlap(
             metabolite_name,
             min_mass_diff,
             isotope_mass_series,
+            metabolites_file,
             isotopes_file,
         ):
             warnings.warn(f"Direct overlap of {label1} and {label2}")
