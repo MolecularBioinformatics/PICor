@@ -81,11 +81,25 @@ def calc_isotopologue_correction(
             print(f"Correction factor {label1}: {corr}")
         for label2 in subset:
             if ip.label_shift_smaller(label1, label2):
-                prob = ip.calc_transition_prob(
+                if resolution_correction:
+                    indirect_overlap_prob = rc.calc_indirect_overlap_prob(
+                        label1,
+                        label2,
+                        metabolite,
+                        min_mass_diff,
+                        metabolites_file,
+                        isotopes_file,
+                    )
+                    data[label2] = data[label2] - indirect_overlap_prob * data[label1]
+                    if verbose:
+                        print(
+                            f"Overlapping prob {label1} -> {label2}: {indirect_overlap_prob}"
+                        )
+                trans_prob = ip.calc_transition_prob(
                     label1, label2, metabolite, metabolites_file, isotopes_file
                 )
-                data[label2] = data[label2] - prob * data[label1]
+                data[label2] = data[label2] - trans_prob * data[label1]
                 data[label2].clip(lower=0, inplace=True)
                 if verbose:
-                    print(f"Transition prob {label1} -> {label2}: {prob}")
+                    print(f"Transition prob {label1} -> {label2}: {trans_prob}")
     return data

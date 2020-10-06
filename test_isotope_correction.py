@@ -30,6 +30,25 @@ class TestIsotopologueCorrection(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(data_corrected, res)
 
+    def test_resolution_result(self):
+        """Result with default values"""
+        data = pd.read_csv(Path("test/test_dataset.csv"), index_col=0)
+        data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
+        data.rename(columns={"4C13 6H02 3N15": "2H02"}, inplace=True)
+        metabolite = "Test1"
+        res = ic.calc_isotopologue_correction(
+            data,
+            metabolite,
+            resolution_correction=True,
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
+            verbose=True,
+        )
+        data_corrected = pd.read_csv(
+            Path("test/test_dataset_resolution_corrected.csv"), index_col=0
+        )
+        pd.testing.assert_frame_equal(data_corrected, res)
+
     def test_resolution_warning(self):
         """Warn when overlapping isotopologues."""
         data = pd.read_csv(Path("test/test_dataset.csv"), index_col=0)

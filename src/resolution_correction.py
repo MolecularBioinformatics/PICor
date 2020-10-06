@@ -176,15 +176,18 @@ def calc_indirect_overlap_prob(
     isotope_mass_series = get_isotope_mass_series(isotopes_file)
     coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
     if coarse_mass_difference <= 0:
-        return
+        return 0
     label1 = parse_label(label1)
     label2 = parse_label(label2)
     label_trans = {"C13": coarse_mass_difference}
-    label1_mod = dict(pd.Series(label1).add(pd.Series(label_trans), fill_value=0))
+    label1_series = pd.Series(label1, dtype="float64")
+    label2_series = pd.Series(label2, dtype="float64")
+    label_trans_series = pd.Series(label_trans, dtype="float64")
+    label1_mod = dict(label1_series.add(label_trans_series, fill_value=0))
     # Check if standard transition is possible
-    label_diff = pd.Series(label2).sub(pd.Series(label1), fill_value=0)
+    label_diff = label2_series.sub(label1_series, fill_value=0)
     if label_diff.ge(0).all():
-        return
+        return 0
     if is_isotologue_overlap(
         label1_mod,
         label2,
