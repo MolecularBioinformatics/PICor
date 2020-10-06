@@ -26,14 +26,14 @@ from src.isotope_correction import (
 ABUNDANCE = None
 
 
-def fwhm(m_cal, m_z, resolution):
+def fwhm(mz_cal, mz, resolution):
     """Calculate Full width half maximum (FWHM)."""
-    if m_cal < 0 or m_z <= 0 or resolution <= 0:
+    if mz_cal < 0 or mz <= 0 or resolution <= 0:
         raise ValueError("Arguments must be positive")
-    return m_z ** (3 / 2) / (resolution * m_cal ** 0.5)
+    return mz ** (3 / 2) / (resolution * mz_cal ** 0.5)
 
 
-def calc_min_mass_diff(mass, charge, m_cal, resolution):
+def calc_min_mass_diff(mass, charge, mz_cal, resolution):
     """Calculate minimal resolvable mass difference.
 
     For m and z return minimal mass difference that ca be resolved properly.
@@ -41,16 +41,16 @@ def calc_min_mass_diff(mass, charge, m_cal, resolution):
         Mass of molecule
     :param charge: int
         Charge of molecule
-    :param m_cal: float
-        Mass for which resolition has been determined
+    :param mz_cal: float
+        Mass/charge for which resolution was determined
     :param resolution: float
         Resolution
     :returns: float
     """
     if mass < 0:
         raise ValueError("'mass' must be positive.")
-    m_z = abs(mass / charge)
-    return 1.66 * abs(charge) * fwhm(m_cal, m_z, resolution)
+    mz = abs(mass / charge)
+    return 1.66 * abs(charge) * fwhm(mz_cal, mz, resolution)
 
 
 def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series, isotopes_file):
