@@ -13,7 +13,7 @@ import warnings
 import pandas as pd
 from scipy.special import binom
 
-from src.isotope_correction import (
+from src.isotope_probabilities import (
     assign_light_isotopes,
     get_isotope_mass_series,
     get_isotope_abundance,
@@ -84,6 +84,18 @@ def calc_isotopologue_mass(
     formula_isotopes = pd.concat([light_isotopes, label])
     mass = isotope_mass_series.multiply(formula_isotopes).dropna().sum()
     return mass
+
+
+def get_metabolite_charge(metabolite_name, metabolites_file):
+    """Get charge of metabolite."""
+    charges = pd.read_csv(
+        metabolites_file,
+        sep="\t",
+        usecols=["name", "charge"],
+        index_col="name",
+        squeeze=True,
+    )
+    return charges[metabolite_name]
 
 
 def calc_coarse_mass_difference(label1, label2):
