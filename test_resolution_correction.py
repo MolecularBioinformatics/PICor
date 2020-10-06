@@ -87,11 +87,9 @@ class TestOverlapWarnings(unittest.TestCase):
 
     def test_indirect_overlap_warn(self):
         """Warning with indirectly overlapping labels."""
-        with self.assertWarns(UserWarning):
-            rc.warn_indirect_overlap(
-                ["3H02", "4C13"],
-                "Test1",
-                0.05,
-                self.metabolites_file,
-                self.isotopes_file,
-            )
+        label_list = [["3H02", "4C13"], ["1H02 1C13", "5C13"]]
+        for labels in label_list:
+            with self.assertWarns(UserWarning):
+                rc.warn_indirect_overlap(
+                    labels, "Test1", 0.05, self.metabolites_file, self.isotopes_file,
+                )

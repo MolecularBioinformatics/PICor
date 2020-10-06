@@ -53,40 +53,6 @@ def calc_min_mass_diff(mass, charge, m_cal, resolution):
     return 1.66 * abs(charge) * fwhm(m_cal, m_z, resolution)
 
 
-def warn_indirect_overlap(
-    label_list, metabolite_name, min_mass_diff, metabolites_file, isotopes_file
-):
-    """Warn if any of labels can have overlap"""
-    isotope_mass_series = get_isotope_mass_series(isotopes_file)
-    n_atoms = get_metabolite_formula(metabolite_name, metabolites_file, isotopes_file)
-
-    for label1, label2 in itertools.permutations(label_list, 2):
-        # Label overlap possible with additional atoms
-        coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
-        if coarse_mass_difference > 0:
-            label1 = parse_label(label1)
-            label2 = parse_label(label2)
-            label_trans = {"C13": coarse_mass_difference}
-            label1_mod = {}
-            for key, val in label1.items():
-                try:
-                    label1_mod[key] = val + label_trans[key]
-                except KeyError:
-                    label1_mod[key] = val
-            if is_isotologue_overlap(
-                label1_mod,
-                label2,
-                metabolite_name,
-                min_mass_diff,
-                isotope_mass_series,
-                isotopes_file,
-            ):
-                prob = calc_label_diff_prob(label1, label_trans, n_atoms, isotopes_file)
-                warnings.warn(
-                    f"{label1} indirect overlap with {label2} with prob {prob:.4f}"
-                )
-
-
 def calc_isotopologue_mass(metabolite_name, label, isotope_mass_series, isotopes_file):
     """Calculate mass of isotopologue.
 
@@ -143,6 +109,37 @@ def is_isotologue_overlap(
         metabolite_name, label2, isotope_mass_series, isotopes_file
     )
     return abs(mass1 - mass2) < min_mass_diff
+
+
+def warn_indirect_overlap(
+    label_list, metabolite_name, min_mass_diff, metabolites_file, isotopes_file
+):
+    """Warn if any of labels can have overlap"""
+    isotope_mass_series = get_isotope_mass_series(isotopes_file)
+    n_atoms = get_metabolite_formula(metabolite_name, metabolites_file, isotopes_file)
+
+    for label1, label2 in itertools.permutations(label_list, 2):
+        # Label overlap possible with additional atoms
+        coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
+        if coarse_mass_difference > 0:
+            label1 = parse_label(label1)
+            label2 = parse_label(label2)
+            label_trans = {"C13": coarse_mass_difference}
+            label1_mod = dict(
+                pd.Series(label1).add(pd.Series(label_trans), fill_value=0)
+            )
+            if is_isotologue_overlap(
+                label1_mod,
+                label2,
+                metabolite_name,
+                min_mass_diff,
+                isotope_mass_series,
+                isotopes_file,
+            ):
+                prob = calc_label_diff_prob(label1, label_trans, n_atoms, isotopes_file)
+                warnings.warn(
+                    f"{label1} indirect overlap with {label2} with prob {prob:.4f}"
+                )
 
 
 def warn_direct_overlap(
