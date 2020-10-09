@@ -49,6 +49,31 @@ class TestIsotopologueCorrection(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(data_corrected, res)
 
+    def test_resolution_ultra_high_result(self):
+        """Result with ultra high resolution."""
+        data = pd.read_csv(Path("test/test_dataset.csv"), index_col=0)
+        data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
+        data.rename(columns={"4C13 6H02 3N15": "2H02"}, inplace=True)
+        metabolite = "Test1"
+        res_w_cor = ic.calc_isotopologue_correction(
+            data,
+            metabolite,
+            resolution_correction=True,
+            resolution=1E6,
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
+            verbose=True,
+        )
+        res_wo_cor = ic.calc_isotopologue_correction(
+            data,
+            metabolite,
+            resolution_correction=False,
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
+            verbose=True,
+        )
+        pd.testing.assert_frame_equal(res_wo_cor, res_w_cor)
+
     def test_resolution_warning(self):
         """Warn when overlapping isotopologues."""
         data = pd.read_csv(Path("test/test_dataset.csv"), index_col=0)
