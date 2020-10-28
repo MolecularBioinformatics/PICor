@@ -3,14 +3,19 @@
 from pathlib import Path
 import unittest
 
-import src.resolution_correction as rc
+import picor.resolution_correction as rc
+
+
+__author__ = "Jørn Dietze"
+__copyright__ = "Jørn Dietze"
+__license__ = "gpl3"
 
 
 class TestMassCalculations(unittest.TestCase):
     """Molecule mass and minimum mass difference."""
 
-    metabolites_file = Path("test/test_metabolites.csv")
-    isotopes_file = Path("test/test_isotopes.csv")
+    metabolites_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_mass_nolabel(self):
         """Molecule mass calculation without label."""
@@ -95,8 +100,8 @@ class TestMassCalculations(unittest.TestCase):
 class TestOverlapWarnings(unittest.TestCase):
     """Overlap warnings."""
 
-    metabolites_file = Path("test/test_metabolites.csv")
-    isotopes_file = Path("test/test_isotopes.csv")
+    metabolites_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_direct_overlap_warn(self):
         """Warning with overlapping labels."""

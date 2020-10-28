@@ -12,6 +12,10 @@ import warnings
 import pandas as pd
 from scipy.special import binom
 
+__author__ = "Jørn Dietze"
+__copyright__ = "Jørn Dietze"
+__license__ = "gpl3"
+
 
 ABUNDANCE = None
 METABOLITES = None

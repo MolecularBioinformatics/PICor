@@ -3,14 +3,19 @@
 from pathlib import Path
 import unittest
 
-import src.isotope_probabilities as ip
+import picor.isotope_probabilities as ip
+
+
+__author__ = "Jørn Dietze"
+__copyright__ = "Jørn Dietze"
+__license__ = "gpl3"
 
 
 class TestLabels(unittest.TestCase):
     """Label and formula parsing."""
 
-    metabolites_file = Path("test/test_metabolites.csv")
-    isotopes_file = Path("test/test_isotopes.csv")
+    metabolites_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_formula_string(self):
         """Parse_formula parses string correctly."""
@@ -110,8 +115,8 @@ class TestLabels(unittest.TestCase):
 class TestCorrectionFactor(unittest.TestCase):
     """Calculation of correction factor."""
 
-    metabolites_file = Path("test/test_metabolites.csv")
-    isotopes_file = Path("test/test_isotopes.csv")
+    metabolites_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_result_no_label(self):
         """Result with 'No label'."""
@@ -149,8 +154,8 @@ class TestCorrectionFactor(unittest.TestCase):
 class TestTransitionProbability(unittest.TestCase):
     """Calculation of probability between to isotopologues"""
 
-    metabolites_file = Path("test/test_metabolites.csv")
-    isotopes_file = Path("test/test_isotopes.csv")
+    metabolites_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_result_label1_smaller(self):
         """Result with label1 being smaller than label2"""

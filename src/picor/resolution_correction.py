@@ -13,7 +13,7 @@ import warnings
 import pandas as pd
 from scipy.special import binom
 
-from src.isotope_probabilities import (
+from picor.isotope_probabilities import (
     assign_light_isotopes,
     get_isotope_mass_series,
     get_isotope_abundance,
@@ -22,6 +22,9 @@ from src.isotope_probabilities import (
     subtract_label,
 )
 
+__author__ = "Jørn Dietze"
+__copyright__ = "Jørn Dietze"
+__license__ = "gpl3"
 
 ABUNDANCE = None
 
