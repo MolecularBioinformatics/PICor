@@ -35,15 +35,24 @@ def calc_isotopologue_correction(
     :param  raw_data: pandas DataFrame
         DataFrame of integrated lowest peaks per species vs time
     :param metabolite: str
-        metabolite name
+        metabolite name as in metabolites_file
     :param subset: list of str or False
         List of column names to use for calculation
     :param exclude_col: list of str
         Columns to ignore in calculation
+    :param resolution_correction: bool (default: False)
+        Run additonal correction for isotopologues overlaping
+        due to low resolution. For example H02 and C13
+    :param mz_calibration: float (default: 200)
+        mass-charge ratio of calibration point
+    :param resolution: float (default: 60_000)
+        Resolution at calibration mz
     :param isotopes_file: Path to isotope file
-        default location: scripts/isotope_correction/isotopes.csv
+        tab-separated file with element, mass, abundance and isotope as rows
+        e.g. H 1.008 0.99 H01
     :param metabolites_file: Path to metabolites file
-        default location: scripts/isotope_correction/metabolites.csv
+        tab-separated file with name, formula and charge as rows
+        e.g. Suc C4H4O3 -1
     :param verbose: bool (default: False)
         print correction and transition factors
     :return: pandas DataFrame
