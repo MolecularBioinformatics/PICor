@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.3.3
+=============
+
+- Fix compatibility with python 3.6 and 3.7
+
 Version 0.3
 ===========
 
