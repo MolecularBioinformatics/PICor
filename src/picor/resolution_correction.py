@@ -1,9 +1,9 @@
 """Isotopologue correction using statistical distributions.
 
 Functions:
-    calc_isotopologue_correction: Correct DataFrame with measurements.
-    calc_correction_factor: Get correction factor for metabolite and label.
-    calc_transition_prob: Get transition probablity for two isotopologues.
+    calc_indirect_overlap_prob: probability of random H02 or C13
+    warn_direct_overlap: warn if direct overlap due to resolution
+    warn_indirect_overlap: warn if overlap due to H02 or C13 incorporation
 """
 import itertools
 from math import prod
