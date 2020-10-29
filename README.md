@@ -36,9 +36,4 @@ print(corr_data)
 You can activate a resolution depent correction by setting  `resolution_correction` to `True`. Specify the resolution and the reference m/z ratio with `resolution` and `mz_calibration`.
 
 
-## Note
-
-This project has been set up using PyScaffold 3.2.3. For details and usage
-information on PyScaffold see https://pyscaffold.org/.
-
 Jørn Dietze, UiT - The Arctic University of Tromsø, 2020
