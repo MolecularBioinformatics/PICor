@@ -5,8 +5,9 @@ Functions:
     warn_direct_overlap: warn if direct overlap due to resolution
     warn_indirect_overlap: warn if overlap due to H02 or C13 incorporation
 """
+from functools import reduce
 import itertools
-from math import prod
+from operator import mul
 import re
 import warnings
 
@@ -269,6 +270,6 @@ def calc_label_diff_prob(label1, difference_labels, n_atoms, isotopes_file):
         prob.append(trans_pr)
 
     # Prob is product of single probabilities
-    prob_total = prod(prob)
+    prob_total = reduce(mul, prob)
     assert prob_total <= 1, "Transition probability greater than 1"
     return prob_total

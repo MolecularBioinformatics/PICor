@@ -4,7 +4,8 @@ Functions:
     calc_correction_factor: Get correction factor for metabolite and label.
     calc_transition_prob: Get transition probablity for two isotopologues.
 """
-from math import prod
+from functools import reduce
+from operator import mul
 import os
 import re
 import warnings
@@ -357,7 +358,7 @@ def calc_correction_factor(
         if n_atom < 0:
             raise ValueError("Too many labelled atoms")
         prob[elem] = ABUNDANCE[elem][0] ** n_atom
-    probability = prod(prob.values())
+    probability = reduce(mul, prob.values())
     return 1 / probability
 
 
@@ -431,6 +432,6 @@ def calc_transition_prob(
         prob.append(trans_pr)
 
     # Prob is product of single probabilities
-    prob_total = prod(prob)
+    prob_total = reduce(mul, prob)
     assert prob_total <= 1, "Transition probability greater than 1"
     return prob_total
