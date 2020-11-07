@@ -27,7 +27,7 @@ Options:
   -o --output OUTFILE       Output file path (csv format)
   -r --res-correction       Perform resolution correction
   --resolution RES          Resolution of measurement [default: 60000]
-  --mz-calibration MZ       Mass-charge ratio of calibration point [default: 200]
+  --mz-calibration MZ       Mass-charge of calibration point [default: 200]
   -s --subset COL           Column for calculation; can be used multiple times
   -x --exclude-col EXCOL    Column to ignore; can be used multiple times
   --metabolites-file MFILE  Path to tab-separated metabolites file
@@ -72,8 +72,8 @@ def cli(arguments):
         subset=arguments["--subset"],
         exclude_col=arguments["--exclude-col"],
         resolution_correction=arguments["--res-correction"],
-        mz_calibration=arguments["--mz-calibration"],
-        resolution=arguments["--resolution"],
+        mz_calibration=float(arguments["--mz-calibration"]),
+        resolution=float(arguments["--resolution"]),
         isotopes_file=arguments["--isotopes-file"],
         metabolites_file=arguments["--metabolites-file"],
     )
