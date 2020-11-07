@@ -1,11 +1,54 @@
 """Isotopologue correction using statistical distributions.
 
-Functions:
-    calc_isotopologue_correction: Correct DataFrame with measurements.
+Read raw data as csv or excle and correct for natural abundance
+
+Usage:
+    isotope_correction.py FILE METABOLITE [-o OUTFILE]
+                                          [-s COL]...
+                                          [-x EXCOL]...
+                                          [--isotopes-file IFILE]
+                                          [--metabolites-file MFILE]
+    isotope_correction.py FILE METABOLITE --res-correction 
+                                          [--mz-calibration MZ]
+                                          [--isotopes-file IFILE]
+                                          [-o OUTFILE]
+                                          [-s COL]...
+                                          [-x EXCOL]...
+                                          [--resolution RES]
+                                          [--metabolites-file MFILE]
+    isotope_correction.py (-h | --help)
+    isotope_correction.py --version
+
+Arguments:
+    FILE        Path to excle or csv file
+    METABOLITE  Name as in metabolites-file
+
+Options:
+  -o --output OUTFILE       Output file path (csv format)
+  -r --res-correction       Perform resolution correction
+  --resolution RES          Resolution of measurement [default: 60000]
+  --mz-calibration MZ       Mass-charge ratio of calibration point [default: 200]
+  -s --subset COL           Column for calculation; can be used multiple times
+  -x --exclude-col EXCOL    Column to ignore; can be used multiple times
+  --metabolites-file MFILE  Path to tab-separated metabolites file
+                            Name, formula and charge as rows; e.g. Suc C4H4O3 -1
+  --isotopes-file IFILE     Path to tab-separated isotope file
+                            Element, mass, abundance and isotope as rows
+                            E.g. H 1.008 0.99 H01
+  -h --help                 Show this screen.
+  --version                 Show version.
+
 """
 import os
 import logging
+from pathlib import Path
+import pkg_resources
+import sys
 
+from docopt import docopt
+import pandas as pd
+
+import picor
 import picor.isotope_probabilities as ip
 import picor.resolution_correction as rc
 
@@ -30,7 +73,8 @@ def calc_isotopologue_correction(
 ):
     """Calculate isotopologue correction factor for metabolite.
 
-    Calculates isotopologue correction factor for metabolite in metabolites file
+    Takes pandas DataFrame and calculates isotopologue correction
+    for metabolite in metabolites file, returns DataFrame with corrected values.
     Only C13 and N15 is supported as column labels right now e.g. 5C13
     :param  raw_data: pandas DataFrame
         DataFrame of integrated lowest peaks per species vs time
@@ -119,3 +163,36 @@ def calc_isotopologue_correction(
                 if verbose:
                     print(f"Transition prob {label1} -> {label2}: {trans_prob}")
     return data
+
+
+def main(arguments):
+    """Function for CLI interface."""
+    infile = Path(arguments["FILE"])
+    outfile = arguments["--output"]
+    if infile.suffix == ".xslx":
+        raw_data = pd.read_excel(infile, index_col=0)
+    elif infile.suffix == ".csv":
+        raw_data = pd.read_csv(infile, index_col=0)
+    else:
+        raise ValueError("FILE can be either '.csv' or '.xslx' file type")
+    corr_data = picor.calc_isotopologue_correction(
+        raw_data,
+        arguments["METABOLITE"],
+        subset=arguments["--subset"],
+        exclude_col=arguments["--exclude-col"],
+        resolution_correction=arguments["--res-correction"],
+        mz_calibration=arguments["--mz-calibration"],
+        resolution=arguments["--resolution"],
+        isotopes_file=arguments["--isotopes-file"],
+        metabolites_file=arguments["--metabolites-file"],
+    )
+    if outfile:
+        corr_data.to_csv(outfile)
+    print(corr_data)
+
+
+if __name__ == "__main__":
+    version = pkg_resources.get_distribution("picor").version
+    arguments = docopt(__doc__, version=version)
+    _logger.info(f"{arguments=}")
+    sys.exit(main(arguments))
