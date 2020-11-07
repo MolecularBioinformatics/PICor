@@ -57,7 +57,7 @@ _logger = logging.getLogger(__name__)
 
 
 def cli(arguments):
-    """Function for CLI interface."""
+    """Run isotope correction with CLI interface."""
     infile = Path(arguments["FILE"])
     outfile = arguments["--output"]
     if infile.suffix == ".xslx":
@@ -83,7 +83,7 @@ def cli(arguments):
 
 
 def main():
-    """Main function used as entry point for CLI."""
+    """Serve as entry point for CLI."""
     version = pkg_resources.get_distribution("picor").version
     arguments = docopt(__doc__, version=version)
     _logger.info(f"{arguments=}")
