@@ -26,11 +26,11 @@ def calc_isotopologue_correction(
     resolution=60000,
     isotopes_file=None,
     metabolites_file=None,
-    verbose=False,
 ):
     """Calculate isotopologue correction factor for metabolite.
 
-    Calculates isotopologue correction factor for metabolite in metabolites file
+    Takes pandas DataFrame and calculates isotopologue correction
+    for metabolite in metabolites file, returns DataFrame with corrected values.
     Only C13 and N15 is supported as column labels right now e.g. 5C13
     :param  raw_data: pandas DataFrame
         DataFrame of integrated lowest peaks per species vs time
@@ -53,8 +53,6 @@ def calc_isotopologue_correction(
     :param metabolites_file: Path to metabolites file
         tab-separated file with name, formula and charge as rows
         e.g. Suc C4H4O3 -1
-    :param verbose: bool (default: False)
-        print correction and transition factors
     :return: pandas DataFrame
         Corrected data
     """
@@ -93,8 +91,7 @@ def calc_isotopologue_correction(
         )
         assert corr >= 1, "Correction factor should be greater or equal 1"
         data[label1] = corr * data[label1]
-        if verbose:
-            print(f"Correction factor {label1}: {corr}")
+        _logger.info(f"Correction factor {label1}: {corr}")
         for label2 in subset:
             if ip.label_shift_smaller(label1, label2):
                 if resolution_correction:
@@ -107,15 +104,13 @@ def calc_isotopologue_correction(
                         isotopes_file,
                     )
                     data[label2] = data[label2] - indirect_overlap_prob * data[label1]
-                    if verbose:
-                        print(
-                            f"Overlapping prob {label1} -> {label2}: {indirect_overlap_prob}"
-                        )
+                    _logger.info(
+                        f"Overlapping prob {label1} -> {label2}: {indirect_overlap_prob}"
+                    )
                 trans_prob = ip.calc_transition_prob(
                     label1, label2, metabolite, metabolites_file, isotopes_file
                 )
                 data[label2] = data[label2] - trans_prob * data[label1]
                 data[label2].clip(lower=0, inplace=True)
-                if verbose:
-                    print(f"Transition prob {label1} -> {label2}: {trans_prob}")
+                _logger.info(f"Transition prob {label1} -> {label2}: {trans_prob}")
     return data

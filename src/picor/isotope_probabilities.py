@@ -8,7 +8,6 @@ from functools import reduce
 from operator import mul
 import os
 import re
-import warnings
 
 import pandas as pd
 from scipy.special import binom
@@ -178,99 +177,6 @@ def get_metabolite_formula(metabolite, metabolites_file, isotopes_file):
     return n_atoms
 
 
-def calc_probability_table(
-    metabolite, label=False, isotopes_file=None, metabolites_file=None
-):
-    """Calculate table of isotopologue probabilities.
-
-    Label supports only H02 (deuterium), C13, N15 and 'No label'.
-    :param metabolite: str of metabolite name
-        Name must be found in metabolites_file
-    :param label: False or str of type and number of atoms
-        E.g. '5C13N15' or 'No label'. False equals to no label
-    :param isotopes_file: Path to isotope file
-        default location: scripts/isotope_correction/isotopes.csv
-    :param metabolites_file: Path to metabolites file
-        default location: scripts/isotope_correction/metabolites.csv
-    :return : Pandas DataFrame
-        Probabilities for different isotopologues for each element and total probability
-    """
-    if not isotopes_file:
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
-        isotopes_file = os.path.join(dir_path, "isotopes.csv")
-    if not metabolites_file:
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
-        metabolites_file = os.path.join(dir_path, "metabolites.csv")
-    global ABUNDANCE
-    if not ABUNDANCE:
-        ABUNDANCE = get_isotope_abundance(isotopes_file)
-
-    # Parse label and store information in atom_label dict
-    atom_label = {}
-    if label:
-        label = parse_label(label)
-        atom_label = isotope_to_element(label)
-
-    n_atoms = get_metabolite_formula(metabolite, metabolites_file, isotopes_file)
-    prob = {}
-    for elem in n_atoms:
-        start_count = 0
-        # Lowers number of atoms in case a label is present
-        if elem not in atom_label:
-            n_atom = n_atoms[elem]
-        else:
-            n_atom = n_atoms[elem] - atom_label[elem]
-            if n_atom < 0:
-                raise ValueError("Too many labelled atoms")
-        abund = ABUNDANCE[elem]
-        p = {}
-        # Calculation for elements with 2 Isotopes
-        if len(abund) == 2:
-            for i in range(start_count, n_atom + 1):
-                n_comb = binom(n_atom, i)
-                p[i] = n_comb
-                p[i] *= abund[0] ** (n_atom - i)
-                p[i] *= abund[1] ** (i)
-        # Calculation for elements with 3 Isotopes
-        elif len(abund) == 3:
-            if len(abund) > 3:
-                warnings.warn(
-                    "Only first three isotopes per element are used for calculation"
-                )
-            for i in range(start_count, n_atom + 1):
-                for j in range(0, i + 1):
-                    shift = (i - j) + 2 * j
-                    pr = binom(n_atom, i - j)
-                    pr *= binom(n_atom, j)
-                    pr *= abund[0] ** (n_atom - i)
-                    pr *= abund[1] ** (i - j)
-                    pr *= abund[2] ** (j)
-                    if shift in p:
-                        p[shift] += pr
-                    else:
-                        p[shift] = pr
-
-        prob[elem] = p
-
-    isotopologue_prob = {}
-    for i in prob["C"]:
-        for j in prob["N"]:
-            for k in prob["O"]:
-                for l in prob["H"]:
-                    if not i + j + k + l in isotopologue_prob:
-                        isotopologue_prob[i + j + k + l] = 0
-                    isotopologue_prob[i + j + k + l] += (
-                        prob["C"][i] * prob["N"][j] * prob["O"][k] * prob["H"][l]
-                    )
-
-    p = pd.DataFrame(prob)
-    p["total"] = pd.Series(isotopologue_prob)
-    p.fillna(value=0.0, inplace=True)
-    return p
-
-
 def assign_light_isotopes(metabolite_series):
     """Replace all element names with light isotopes ("C" -> "C13")."""
     result = metabolite_series.rename(
@@ -282,7 +188,7 @@ def assign_light_isotopes(metabolite_series):
             "Si": "Si28",
             "P": "P31",
             "S": "S32",
-        },
+        }
     )
     return result
 
@@ -290,11 +196,7 @@ def assign_light_isotopes(metabolite_series):
 def subtract_label(metabolite_series, label_series):
     """Subtract label atoms from metabolite formula."""
     formula_difference = metabolite_series.copy()
-    iso_dict = {
-        "H02": "H01",
-        "C13": "C12",
-        "N15": "N14",
-    }
+    iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14"}
     for heavy in label_series.keys():
         light = iso_dict[heavy]
         formula_difference[light] = metabolite_series[light] - label_series[heavy]

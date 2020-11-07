@@ -138,7 +138,7 @@ def is_isotologue_overlap(
 def warn_indirect_overlap(
     label_list, metabolite_name, min_mass_diff, metabolites_file, isotopes_file
 ):
-    """Warn if any of labels can have indirect overlap"""
+    """Warn if any of labels can have indirect overlap."""
     for label1, label2 in itertools.permutations(label_list, 2):
         prob = calc_indirect_overlap_prob(
             label1,

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.4.0
+=============
+- Expand README
+- Add CLI interface callable by `picor -h`
+
 Version 0.3.3
 =============
 
