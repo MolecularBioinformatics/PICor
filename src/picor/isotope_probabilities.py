@@ -188,7 +188,7 @@ def assign_light_isotopes(metabolite_series):
             "Si": "Si28",
             "P": "P31",
             "S": "S32",
-        },
+        }
     )
     return result
 
@@ -196,11 +196,7 @@ def assign_light_isotopes(metabolite_series):
 def subtract_label(metabolite_series, label_series):
     """Subtract label atoms from metabolite formula."""
     formula_difference = metabolite_series.copy()
-    iso_dict = {
-        "H02": "H01",
-        "C13": "C12",
-        "N15": "N14",
-    }
+    iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14"}
     for heavy in label_series.keys():
         light = iso_dict[heavy]
         formula_difference[light] = metabolite_series[light] - label_series[heavy]
