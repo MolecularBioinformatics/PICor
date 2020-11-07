@@ -1,6 +1,6 @@
 """Isotopologue correction using statistical distributions.
 
-Read raw data as csv or excel and correct for natural abundance
+Read raw data as csv or excel file and correct for natural abundance.
 
 Usage:
     picor FILE METABOLITE [-o OUTFILE]
@@ -60,12 +60,12 @@ def cli(arguments):
     """Run isotope correction with CLI interface."""
     infile = Path(arguments["FILE"])
     outfile = arguments["--output"]
-    if infile.suffix == ".xslx":
+    if infile.suffix == ".xlsx":
         raw_data = pd.read_excel(infile, index_col=0)
     elif infile.suffix == ".csv":
         raw_data = pd.read_csv(infile, index_col=0)
     else:
-        raise ValueError("FILE can be either '.csv' or '.xslx' file type")
+        raise ValueError("FILE can be either '.csv' or '.xlsx' file type")
     corr_data = picor.calc_isotopologue_correction(
         raw_data,
         arguments["METABOLITE"],
