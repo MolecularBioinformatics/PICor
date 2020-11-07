@@ -50,7 +50,6 @@ class TestIsotopologueCorrection(unittest.TestCase):
             resolution_correction=True,
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
-            verbose=True,
         )
         data_corrected = pd.read_csv(
             Path("tests/test_dataset_resolution_corrected.csv"), index_col=0
@@ -70,7 +69,6 @@ class TestIsotopologueCorrection(unittest.TestCase):
             resolution=1e6,
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
-            verbose=True,
         )
         res_wo_cor = ic.calc_isotopologue_correction(
             data,
@@ -78,7 +76,6 @@ class TestIsotopologueCorrection(unittest.TestCase):
             resolution_correction=False,
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
-            verbose=True,
         )
         pd.testing.assert_frame_equal(res_wo_cor, res_w_cor)
 
