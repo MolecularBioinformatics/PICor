@@ -63,6 +63,19 @@ class TestLabels(unittest.TestCase):
         with self.assertRaises(ValueError):
             ip.parse_label(data)
 
+    def test_label_split_label(self):
+        """Parse_label parses composite label correctly."""
+        data = "NAD:2N153C13H02"
+        res_corr = {"N15": 2, "C13": 3, "H02": 1}
+        res = ip.parse_label(data)
+        self.assertEqual(res, res_corr)
+
+    def test_label_bad_split_label(self):
+        """Parse_label raises ValueError with bad composite label."""
+        data = "NAD:NamPT:2N153C13H02"
+        with self.assertRaises(ValueError):
+            ip.parse_label(data)
+
     def test_get_metabolite_formula_result(self):
         """Return valid formula."""
         res = ip.get_metabolite_formula(
@@ -70,12 +83,32 @@ class TestLabels(unittest.TestCase):
         )
         self.assertDictEqual(res, {"C": 21, "H": 28, "N": 7, "O": 14, "P": 2})
 
+    def test_get_metabolite_formula_unknown(self):
+        """Raise KeyError with undefined metabolite."""
+        with self.assertRaises(KeyError):
+            ip.get_metabolite_formula(
+                "UnKnown", self.metabolites_file, self.isotopes_file
+            )
+
     def test_get_metabolite_formula_invalid_element(self):
         """Raise ValueError with invalid element in metabolite formula."""
         with self.assertRaises(ValueError):
             ip.get_metabolite_formula(
                 "Test3", self.metabolites_file, self.isotopes_file
             )
+
+    def test_isotope_to_element_result(self):
+        """Return correct elements."""
+        label = {"N15": 2, "C13": 3, "H02": 1}
+        res_corr = {"N": 2, "C": 3, "H": 1}
+        res = ip.isotope_to_element(label)
+        self.assertEqual(res, res_corr)
+
+    def test_isotope_to_element_bad_element(self):
+        """Raise ValueError for undefined element in isotope label."""
+        label = {"O18": 2, "C13": 3, "H02": 1}
+        with self.assertRaises(ValueError):
+            ip.isotope_to_element(label)
 
     def test_sort_list(self):
         """Sort_labels gives correct order with list of strings."""
@@ -119,14 +152,12 @@ class TestCorrectionFactor(unittest.TestCase):
     isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_result_no_label(self):
-        """Result with 'No label'."""
+        """Result without label."""
         res = ip.calc_correction_factor(
             "Test1",
-            label="No label",
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
         )
-        # corr_factor = 1 / res.total[0]
         self.assertAlmostEqual(res, 1.33471643)
 
     def test_result_with_label(self):
@@ -134,14 +165,11 @@ class TestCorrectionFactor(unittest.TestCase):
         res = ip.calc_correction_factor(
             "Test1",
             label="10C131N1512H02",
-            metabolites_file=self.metabolites_file,
-            isotopes_file=self.isotopes_file,
         )
-        # corr_factor = 1 / res.total[0]
         self.assertAlmostEqual(res, 1.19257588)
 
     def test_result_wrong_label(self):
-        """ValueError with impossible label"""
+        """ValueError with impossible label."""
         with self.assertRaises(ValueError):
             ip.calc_correction_factor(
                 "Test1",
@@ -152,13 +180,27 @@ class TestCorrectionFactor(unittest.TestCase):
 
 
 class TestTransitionProbability(unittest.TestCase):
-    """Calculation of probability between to isotopologues"""
+    """Calculation of probability between to isotopologues."""
 
     metabolites_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
 
+    def test_result_labels_dict(self):
+        """Result with label1 being smaller than label2 and both dict."""
+        label1 = {"N15": 1}
+        label2 = {"N15":2, "C13":2}
+        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
+        res = ip.calc_transition_prob(
+            label1,
+            label2,
+            metabolite,
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
+        )
+        self.assertAlmostEqual(res, 0.00026729)
+
     def test_result_label1_smaller(self):
-        """Result with label1 being smaller than label2"""
+        """Result with label1 being smaller than label2."""
         label1 = "1N15"
         label2 = "2N152C13"
         metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
@@ -172,7 +214,7 @@ class TestTransitionProbability(unittest.TestCase):
         self.assertAlmostEqual(res, 0.00026729)
 
     def test_result_label1_equal(self):
-        """Result with label1 being equal to label2"""
+        """Result with label1 being equal to label2."""
         label1 = "1N15"
         metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ip.calc_transition_prob(
@@ -185,7 +227,7 @@ class TestTransitionProbability(unittest.TestCase):
         self.assertEqual(res, 0)
 
     def test_result_label1_larger(self):
-        """Result with label1 being larger than label2"""
+        """Result with label1 being larger than label2."""
         label1 = "2N152C13"
         label2 = "2N15"
         metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
@@ -199,7 +241,7 @@ class TestTransitionProbability(unittest.TestCase):
         self.assertEqual(res, 0)
 
     def test_result_metabolite_formula(self):
-        """Result with metabolite formula"""
+        """Result with metabolite formula."""
         label1 = "1N15"
         label2 = "2N152C13"
         metabolite = "Test1"
@@ -213,7 +255,7 @@ class TestTransitionProbability(unittest.TestCase):
         self.assertAlmostEqual(res, 0.00042029)
 
     def test_wrong_type(self):
-        """Type error with list as metabolite"""
+        """Type error with list as metabolite."""
         label1 = "1N15"
         label2 = "2N152C13"
         metabolite = ["C30", "Si12", "H2", "N3"]
