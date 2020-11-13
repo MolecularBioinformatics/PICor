@@ -1,6 +1,8 @@
 """Unit tests for resolution dependent isotope correction."""
 
+import itertools
 from pathlib import Path
+import pytest
 import unittest
 
 import picor.resolution_correction as rc
@@ -40,6 +42,30 @@ class TestMassCalculations(unittest.TestCase):
             self.isotopes_file,
         )
         self.assertAlmostEqual(res, 679.167270, places=5)
+
+    def test_mass_label_dict(self):
+        """Molecule mass calculation with dict as label."""
+        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
+        res = rc.calc_isotopologue_mass(
+            "Test1",
+            {"C13": 15},
+            isotope_mass_series,
+            self.metabolites_file,
+            self.isotopes_file,
+        )
+        self.assertAlmostEqual(res, 679.167270, places=5)
+
+    def test_mass_bad_label_type(self):
+        """ValueError for Molecule mass calculation with list as label."""
+        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
+        with self.assertRaises(ValueError):
+            rc.calc_isotopologue_mass(
+                "Test1",
+                ["55C13"],
+                isotope_mass_series,
+                self.metabolites_file,
+                self.isotopes_file,
+            )
 
     def test_mass_bad_label(self):
         """ValueError for Molecule mass calculation with too large label."""
@@ -95,6 +121,22 @@ class TestMassCalculations(unittest.TestCase):
         """Difference in nucleons."""
         res = rc.calc_coarse_mass_difference("No label", "5C13 3N15 2H02")
         self.assertEqual(res, 10)
+
+    def test_fwhm_result(self):
+        """Result with valid input."""
+        mz_cal, mz, resolution = 200, 500, 50_000
+        res = rc.fwhm(mz_cal, mz, resolution)
+        self.assertAlmostEqual(res, 0.01581139)
+
+    def test_fwhm_bad_input(self):
+        """Result with valid input."""
+        for mz_cal, mz, resolution in itertools.product([200, -200], repeat=3):
+            if all(ele > 0 for ele in [mz_cal, mz, resolution]):
+                # skip case in which all are positive
+                continue
+            with self.subTest():
+                with self.assertRaises(ValueError):
+                    rc.fwhm(mz_cal, mz, resolution)
 
 
 class TestOverlapWarnings(unittest.TestCase):
