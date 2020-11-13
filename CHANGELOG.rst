@@ -2,8 +2,14 @@
 Changelog
 =========
 
+Version 0.4.1
+=============
+
+- Add more test to reach 100% test coverage
+
 Version 0.4.0
 =============
+
 - Expand README
 - Add CLI interface callable by `picor -h`
 
