@@ -162,10 +162,7 @@ class TestCorrectionFactor(unittest.TestCase):
 
     def test_result_with_label(self):
         """Result with complex label."""
-        res = ip.calc_correction_factor(
-            "Test1",
-            label="10C131N1512H02",
-        )
+        res = ip.calc_correction_factor("Test1", label="10C131N1512H02",)
         self.assertAlmostEqual(res, 1.19257588)
 
     def test_result_wrong_label(self):
@@ -188,7 +185,7 @@ class TestTransitionProbability(unittest.TestCase):
     def test_result_labels_dict(self):
         """Result with label1 being smaller than label2 and both dict."""
         label1 = {"N15": 1}
-        label2 = {"N15":2, "C13":2}
+        label2 = {"N15": 2, "C13": 2}
         metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ip.calc_transition_prob(
             label1,
@@ -201,7 +198,7 @@ class TestTransitionProbability(unittest.TestCase):
 
     def test_result_label1_smaller(self):
         """Result with label1 being smaller than label2."""
-        label1 = "1N15"
+        label1 = "2N15"
         label2 = "2N152C13"
         metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ip.calc_transition_prob(
@@ -211,7 +208,7 @@ class TestTransitionProbability(unittest.TestCase):
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
         )
-        self.assertAlmostEqual(res, 0.00026729)
+        self.assertAlmostEqual(res, 0.03685030)
 
     def test_result_label1_equal(self):
         """Result with label1 being equal to label2."""
