@@ -310,9 +310,8 @@ def calc_transition_prob(
     if difference_labels.lt(0).any():
         return 0
 
+    # ABUNDANCE is set in get_metabolite_formula
     global ABUNDANCE
-    if not ABUNDANCE:
-        ABUNDANCE = get_isotope_abundance(isotopes_file)
 
     prob = []
     for elem in difference_labels.index:
