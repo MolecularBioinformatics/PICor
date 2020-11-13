@@ -13,13 +13,13 @@ __license__ = "gpl3"
 
 
 class TestIsotopologueCorrection(unittest.TestCase):
-    """Total Correction Factor for metabolite and DataFrame"""
+    """Total Correction Factor for metabolite and DataFrame."""
 
     metabolites_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_result(self):
-        """Result with default values"""
+        """Result with default values."""
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
         metabolite = "Test1"
@@ -29,6 +29,25 @@ class TestIsotopologueCorrection(unittest.TestCase):
             metabolites_file=self.metabolites_file,
             isotopes_file=self.isotopes_file,
         )
+        data_corrected = pd.read_csv(
+            Path("tests/test_dataset_corrected.csv"), index_col=0
+        )
+        pd.testing.assert_frame_equal(data_corrected, res)
+
+    def test_result_subset(self):
+        """Result with explicit subset."""
+        data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
+        subset = ["No label", "1C13", "4C13 6H02 3N15"]
+        metabolite = "Test1"
+        res = ic.calc_isotopologue_correction(
+            data,
+            metabolite,
+            subset=subset,
+            metabolites_file=self.metabolites_file,
+            isotopes_file=self.isotopes_file,
+        )
+        assert res.shape == data.shape
+        res.drop(columns=["dummy column int", "dummy column str"], inplace=True)
         data_corrected = pd.read_csv(
             Path("tests/test_dataset_corrected.csv"), index_col=0
         )
