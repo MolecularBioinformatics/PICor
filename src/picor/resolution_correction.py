@@ -252,10 +252,8 @@ def calc_label_diff_prob(label1, difference_labels, n_atoms, isotopes_file):
 
     prob = []
     for isotope, n_label in difference_labels.items():
-        try:
-            n_elem_1 = label1[isotope]
-        except KeyError:
-            n_elem_1 = 0
+        # get number of atoms of isotope, default to 0
+        n_elem_1 = label1.get(isotope, 0)
         elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
 
         n_unlab = n_atoms[elem] - n_elem_1 - n_label

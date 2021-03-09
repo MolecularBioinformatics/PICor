@@ -300,9 +300,9 @@ def calc_transition_prob(
         raise TypeError(
             "metabolite_formula must be str (molecular formula) or dict of elements"
         )
-    label1 = pd.DataFrame.from_dict(label1, orient="index")
-    label2 = pd.DataFrame.from_dict(label2, orient="index")
-    difference_labels = label2.sub(label1, fill_value=0).iloc[:, 0]
+    label1 = pd.Series(label1)
+    label2 = pd.Series(label2)
+    difference_labels = label2.sub(label1, fill_value=0)
     difference_labels.index = difference_labels.index.str[:-2]
     label1.index = label1.index.str[:-2]
     label2.index = label2.index.str[:-2]
@@ -315,11 +315,8 @@ def calc_transition_prob(
 
     prob = []
     for elem in difference_labels.index:
-        try:
-            n_elem_1 = label1.loc[elem, 0]
-        except KeyError:
-            n_elem_1 = 0
-        n_elem_2 = label2.loc[elem, 0]
+        n_elem_1 = label1.get(elem, 0)
+        n_elem_2 = label2.get(elem, 0)
         n_unlab = n_atoms[elem] - n_elem_2
         n_label = difference_labels[elem]
         abun_unlab = ABUNDANCE[elem][0]
