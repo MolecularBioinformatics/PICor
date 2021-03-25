@@ -57,39 +57,6 @@ def calc_min_mass_diff(mass, charge, mz_cal, resolution):
     return 1.66 * abs(charge) * fwhm(mz_cal, mz, resolution)
 
 
-def calc_isotopologue_mass(
-    metabolite_name, label, isotope_mass_series, metabolites_file, isotopes_file
-):
-    """Calculate mass of isotopologue.
-
-    Given the metabolite name and label composition, return mass in atomic units.
-    :param metabolite_name: str
-        Name as in metabolite_file
-    :param label: str or dict
-        "No label" or formula, can contain whitespaces
-    :param isotope_mass_series: pandas Series
-        Isotope name (e.g. 'H02') as index and mass as values
-        Output of 'get_isotope_mass_series'
-    :returns: float
-    """
-    if isinstance(label, str):
-        label_dict = parse_label(label)
-    elif isinstance(label, dict):
-        label_dict = label
-    else:
-        raise ValueError("label must be str or dict")
-    label = pd.Series(label_dict, dtype="int64")
-    metab = pd.Series(
-        get_metabolite_formula(metabolite_name, metabolites_file, isotopes_file),
-        dtype="int64",
-    )
-    metab = assign_light_isotopes(metab)
-    light_isotopes = subtract_label(metab, label)
-    formula_isotopes = pd.concat([light_isotopes, label])
-    mass = isotope_mass_series.multiply(formula_isotopes).dropna().sum()
-    return mass
-
-
 def get_metabolite_charge(metabolite_name, metabolites_file):
     """Get charge of metabolite."""
     charges = pd.read_csv(

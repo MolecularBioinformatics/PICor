@@ -17,8 +17,140 @@ __copyright__ = "Jørn Dietze"
 __license__ = "gpl3"
 
 
-ABUNDANCE = None
-METABOLITES = None
+class IsotopeInfo:
+    def __init__(self, isotopes_file):
+        """
+            :param isotopes_file: str
+                File path to isotopes file
+                comma separated csv with element and abundance columns
+        """
+        self.isotopes_file = isotopes_file
+        self.abundance = self.get_isotope_abundance(isotopes_file)
+        self.isotope_mass_series = self.get_isotope_mass_series(self.isotopes_file)
+
+    def get_isotope_abundance(self):
+        """Get abundace of different isotopes.
+
+        Parse file with abundance of different isotopes
+        :return: dict
+        """
+        isotopes = pd.read_csv(self.isotopes_file, sep="\t")
+        isotopes.set_index("element", drop=True, inplace=True)
+
+        abundance = {}
+        for elem in isotopes.itertuples():
+            if elem.Index not in abundance:
+                abundance[elem.Index] = []
+            abundance[elem.Index].append(elem.abundance)
+        return abundance
+
+    def get_isotope_mass_series(self):
+        """Get series of isotope masses."""
+        return pd.read_csv(
+            self.isotopes_file,
+            sep="\t",
+            usecols=["mass", "isotope"],
+            index_col="isotope",
+            squeeze=True,
+        )
+
+
+class MoleculeInfo:
+    def __init__(self, molecule_name, molecules_file, isotopes_file):
+        """
+            :param isotopes_file: str
+                File path to isotopes file
+                comma separated csv with element and abundance columns
+        """
+        self.molecule_name = molecule_name
+        self.isotopes = IsotopeInfo(isotopes_file)
+        self.molecule_list = self.get_molecule_list(molecules_file)
+        self.formula = self.get_molecule_formula()
+
+    def get_molecule_list(self, molecules_file):
+        molecule_list = pd.read_csv(molecules_file, sep="\t", na_filter=False)
+        molecule_list["formula"] = molecule_list["formula"].apply(parse_formula)
+        molecule_list.set_index("name", drop=True, inplace=True)
+        return molecule_list
+
+    def get_molecule_formula(self):
+        """Get molecular formula from file.
+
+        Parse and look up molecular formula of molecule and
+        return number of atoms per element
+        :param molecule: str
+            Name of molecule used in molecules_file
+        :param molecules_file: str
+            File path to isotopes file
+            tab-separated csv with name and formula columns
+        :param isotopes_file: Path to isotope file
+            File path to isotopes file, tab separated
+        :return: dict
+            Elements and number
+        """
+        try:
+            n_atoms = self.molecule_list.loc[self.molecule_name].formula
+        except KeyError as error:
+            raise KeyError(
+                f"Molecule {error} couldn't be found in molecules file"
+            ) from error
+        if not all(element in self.isotopes.abundance for element in n_atoms):
+            raise ValueError("Unknown element in molecule")
+        return n_atoms
+
+    def get_molecule_light_isotopes(self):
+        """Replace all element names with light isotopes ("C" -> "C13")."""
+        molecule_series = pd.Series(
+            self.get_molecule_formula(self.molecule_name), dtype="int64",
+        )
+        result = molecule_series.rename(
+            {
+                "H": "H01",
+                "C": "C12",
+                "N": "N14",
+                "O": "O16",
+                "Si": "Si28",
+                "P": "P31",
+                "S": "S32",
+            }
+        )
+        return result
+
+    def subtract_label(molecule_series, label_series):
+        """Subtract label atoms from molecule formula."""
+        formula_difference = molecule_series.copy()
+        iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14"}
+        for heavy in label_series.keys():
+            light = iso_dict[heavy]
+            formula_difference[light] = molecule_series[light] - label_series[heavy]
+            if any(formula_difference < 0):
+                raise ValueError("Too many labelled atoms")
+        return formula_difference
+
+    def calc_isotopologue_mass(
+        self, label,
+    ):
+        """Calculate mass of isotopologue.
+
+        Given the molecule name and label composition, return mass in atomic units.
+        :param molecule_name: str
+            Name as in molecule_file
+        :param label: str or dict
+            "No label" or formula, can contain whitespaces
+        :returns: float
+        """
+        if isinstance(label, str):
+            label_dict = parse_label(label)
+        elif isinstance(label, dict):
+            label_dict = label
+        else:
+            raise ValueError("label must be str or dict")
+        label = pd.Series(label_dict, dtype="int64")
+        molecule_series = self.get_molecule_light_isotopes()
+        light_isotopes = self.subtract_label(molecule_series, label)
+        formula_isotopes = pd.concat([light_isotopes, label])
+        mass = self.isotope_mass_series.multiply(formula_isotopes).dropna().sum()
+        return mass
 
 
 def parse_formula(string):
@@ -122,102 +254,8 @@ def label_shift_smaller(label1, label2):
     return shift_label1 < shift_label2
 
 
-def get_isotope_abundance(isotopes_file):
-    """Get abundace of different isotopes.
-
-    Parse file with abundance of different isotopes
-    :param isotopes_file: str
-        File path to isotopes file
-        comma separated csv with element and abundance columns
-    :return: dict
-    """
-    isotopes = pd.read_csv(isotopes_file, sep="\t")
-    isotopes.set_index("element", drop=True, inplace=True)
-
-    abundance = {}
-    for elem in isotopes.itertuples():
-        if elem.Index not in abundance:
-            abundance[elem.Index] = []
-        abundance[elem.Index].append(elem.abundance)
-    return abundance
-
-
-def get_metabolite_formula(metabolite, metabolites_file, isotopes_file):
-    """Get molecular formula from file.
-
-    Parse and look up molecular formula of metabolite and
-    return number of atoms per element
-    :param metabolite: str
-        Name of metabolite used in metabolites_file
-    :param metabolites_file: str
-        File path to isotopes file
-        tab-separated csv with name and formula columns
-    :param isotopes_file: Path to isotope file
-        File path to isotopes file, tab separated
-    :return: dict
-        Elements and number
-    """
-    global ABUNDANCE
-    if not ABUNDANCE:
-        ABUNDANCE = get_isotope_abundance(isotopes_file)
-    global METABOLITES
-    if not isinstance(METABOLITES, pd.DataFrame):
-        METABOLITES = pd.read_csv(metabolites_file, sep="\t", na_filter=False)
-        METABOLITES["formula"] = METABOLITES["formula"].apply(parse_formula)
-        METABOLITES.set_index("name", drop=True, inplace=True)
-
-    try:
-        n_atoms = METABOLITES.loc[metabolite].formula
-    except KeyError as error:
-        raise KeyError(
-            f"Metabolite {error} couldn't be found in metabolites file"
-        ) from error
-    if not all(element in ABUNDANCE for element in n_atoms):
-        raise ValueError("Unknown element in metabolite")
-    return n_atoms
-
-
-def assign_light_isotopes(metabolite_series):
-    """Replace all element names with light isotopes ("C" -> "C13")."""
-    result = metabolite_series.rename(
-        {
-            "H": "H01",
-            "C": "C12",
-            "N": "N14",
-            "O": "O16",
-            "Si": "Si28",
-            "P": "P31",
-            "S": "S32",
-        }
-    )
-    return result
-
-
-def subtract_label(metabolite_series, label_series):
-    """Subtract label atoms from metabolite formula."""
-    formula_difference = metabolite_series.copy()
-    iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14"}
-    for heavy in label_series.keys():
-        light = iso_dict[heavy]
-        formula_difference[light] = metabolite_series[light] - label_series[heavy]
-    if any(formula_difference < 0):
-        raise ValueError("Too many labelled atoms")
-    return formula_difference
-
-
-def get_isotope_mass_series(isotopes_file):
-    """Get series of isotope masses."""
-    return pd.read_csv(
-        isotopes_file,
-        sep="\t",
-        usecols=["mass", "isotope"],
-        index_col="isotope",
-        squeeze=True,
-    )
-
-
 def calc_correction_factor(
-    metabolite, label=False, isotopes_file=None, metabolites_file=None
+    molecule_info, label=False,
 ):
     """Calculate correction factor with metabolite composition defined by label.
 
@@ -233,17 +271,17 @@ def calc_correction_factor(
     :return: float
         Correction factor
     """
-    if not isotopes_file:
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
-        isotopes_file = os.path.join(dir_path, "isotopes.csv")
-    if not metabolites_file:
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
-        metabolites_file = os.path.join(dir_path, "metabolites.csv")
-    global ABUNDANCE
-    if not ABUNDANCE:
-        ABUNDANCE = get_isotope_abundance(isotopes_file)
+    # if not isotopes_file:
+    #     path = os.path.abspath(__file__)
+    #     dir_path = os.path.dirname(path)
+    #     isotopes_file = os.path.join(dir_path, "isotopes.csv")
+    # if not metabolites_file:
+    #     path = os.path.abspath(__file__)
+    #     dir_path = os.path.dirname(path)
+    #     metabolites_file = os.path.join(dir_path, "metabolites.csv")
+    # global ABUNDANCE
+    # if not ABUNDANCE:
+    #     ABUNDANCE = get_isotope_abundance(isotopes_file)
 
     # Parse label and store information in atom_label dict
     atom_label = {}
@@ -251,7 +289,8 @@ def calc_correction_factor(
         label = parse_label(label)
         atom_label = isotope_to_element(label)
 
-    n_atoms = get_metabolite_formula(metabolite, metabolites_file, isotopes_file)
+    n_atoms = molecule_info.formula
+    abundance = molecule_info.isotopes.abundance
     prob = {}
     for elem in n_atoms:
         n_atom = (
@@ -259,14 +298,12 @@ def calc_correction_factor(
         )
         if n_atom < 0:
             raise ValueError("Too many labelled atoms")
-        prob[elem] = ABUNDANCE[elem][0] ** n_atom
+        prob[elem] = abundance[elem][0] ** n_atom
     probability = reduce(mul, prob.values())
     return 1 / probability
 
 
-def calc_transition_prob(
-    label1, label2, metabolite_formula, metabolites_file, isotopes_file
-):
+def calc_transition_prob(label1, label2, molecule_info):
     """Calculate the probablity between two (un-)labelled isotopologues.
 
     :param label1: str or dict
@@ -290,16 +327,9 @@ def calc_transition_prob(
     if not label_shift_smaller(label1, label2):
         return 0
 
-    if isinstance(metabolite_formula, str):
-        n_atoms = get_metabolite_formula(
-            metabolite_formula, metabolites_file, isotopes_file
-        )
-    elif isinstance(metabolite_formula, dict):
-        n_atoms = metabolite_formula
-    else:
-        raise TypeError(
-            "metabolite_formula must be str (molecular formula) or dict of elements"
-        )
+    if not isinstance(molecule_info, MoleculeInfo):
+        raise TypeError("molecule_info must be instance of MoleculeInfo class")
+    n_atoms = molecule_info.formula
     label1 = pd.Series(label1)
     label2 = pd.Series(label2)
     difference_labels = label2.sub(label1, fill_value=0)
@@ -310,8 +340,7 @@ def calc_transition_prob(
     if difference_labels.lt(0).any():
         return 0
 
-    # ABUNDANCE is set in get_metabolite_formula
-    global ABUNDANCE
+    abundance = molecule_info.isotopes.abundance
 
     prob = []
     for elem in difference_labels.index:
@@ -319,8 +348,8 @@ def calc_transition_prob(
         n_elem_2 = label2.get(elem, 0)
         n_unlab = n_atoms[elem] - n_elem_2
         n_label = difference_labels[elem]
-        abun_unlab = ABUNDANCE[elem][0]
-        abun_lab = ABUNDANCE[elem][1]
+        abun_unlab = abundance[elem][0]
+        abun_lab = abundance[elem][1]
         if n_label == 0:
             continue
 
