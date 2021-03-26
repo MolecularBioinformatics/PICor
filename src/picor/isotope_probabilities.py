@@ -6,7 +6,6 @@ Functions:
 """
 from functools import reduce
 from operator import mul
-import os
 import re
 
 import pandas as pd
@@ -26,15 +25,16 @@ class IsotopeInfo:
         """
         self.isotopes_file = isotopes_file
         self.abundance = self.get_isotope_abundance(isotopes_file)
-        self.isotope_mass_series = self.get_isotope_mass_series(self.isotopes_file)
+        self.isotope_mass_series = self.get_isotope_mass_series(isotopes_file)
 
-    def get_isotope_abundance(self):
+    @staticmethod
+    def get_isotope_abundance(isotopes_file):
         """Get abundace of different isotopes.
 
         Parse file with abundance of different isotopes
         :return: dict
         """
-        isotopes = pd.read_csv(self.isotopes_file, sep="\t")
+        isotopes = pd.read_csv(isotopes_file, sep="\t")
         isotopes.set_index("element", drop=True, inplace=True)
 
         abundance = {}
@@ -44,10 +44,11 @@ class IsotopeInfo:
             abundance[elem.Index].append(elem.abundance)
         return abundance
 
-    def get_isotope_mass_series(self):
+    @staticmethod
+    def get_isotope_mass_series(isotopes_file):
         """Get series of isotope masses."""
         return pd.read_csv(
-            self.isotopes_file,
+            isotopes_file,
             sep="\t",
             usecols=["mass", "isotope"],
             index_col="isotope",
@@ -67,7 +68,8 @@ class MoleculeInfo:
         self.molecule_list = self.get_molecule_list(molecules_file)
         self.formula = self.get_molecule_formula()
 
-    def get_molecule_list(self, molecules_file):
+    @staticmethod
+    def get_molecule_list(molecules_file):
         molecule_list = pd.read_csv(molecules_file, sep="\t", na_filter=False)
         molecule_list["formula"] = molecule_list["formula"].apply(parse_formula)
         molecule_list.set_index("name", drop=True, inplace=True)
@@ -116,6 +118,7 @@ class MoleculeInfo:
         )
         return result
 
+    @staticmethod
     def subtract_label(molecule_series, label_series):
         """Subtract label atoms from molecule formula."""
         formula_difference = molecule_series.copy()
@@ -149,7 +152,7 @@ class MoleculeInfo:
         molecule_series = self.get_molecule_light_isotopes()
         light_isotopes = self.subtract_label(molecule_series, label)
         formula_isotopes = pd.concat([light_isotopes, label])
-        mass = self.isotope_mass_series.multiply(formula_isotopes).dropna().sum()
+        mass = self.isotopes.isotope_mass_series.multiply(formula_isotopes).dropna().sum()
         return mass
 
 
