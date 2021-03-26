@@ -32,15 +32,27 @@ def calc_min_mass_diff(mass, charge, mz_cal, resolution):
     """Calculate minimal resolvable mass difference.
 
     For m and z return minimal mass difference that ca be resolved properly.
-    :param mass: float
+
+    Parameters
+    ----------
+    mass : float
         Mass of molecule
-    :param charge: int
+    charge : int
         Charge of molecule
-    :param mz_cal: float
+    mz_cal : float
         Mass/charge for which resolution was determined
-    :param resolution: float
+    resolution : float
         Resolution
-    :returns: float
+
+    Returns
+    -------
+    float
+        Minimal resolvable mass differenceo
+
+    Raises
+    ------
+    ValueError
+        If molecule mass is negative.
     """
     if mass < 0:
         raise ValueError("'mass' must be positive.")
@@ -89,19 +101,21 @@ def calc_indirect_overlap_prob(
     """Calculate probability for overlap caused by random H02 and C13 incoporation.
 
     Only C13 and H02 attributions are considered so far.
-    :param label1: str
+
+    Parameters
+    ----------
+    label1 : str
         "No label" or formula e.g. "1C13 2H02"
-    :param label2: str
+    label2 : str
         "No label" or formula e.g. "1C13 2H02"
-    :param metabolite_name: str
-        Name as in metabolites_file
-    :param min_mass_diff: float
+    molecule_info : MoleculeInfo
+        Instance with molecule and isotope information.
+    min_mass_diff : float
         Minimal resolvable mass difference by MS measurement
-    :param metabolites_file: Path to metabolites file
-        default location: ~/isocordb/Metabolites.dat
-    :param isotopes_file: Path to isotope file
-        default location: ~/isocordb/Isotopes.dat
-    :return: float
+
+    Returns
+    -------
+    float
         Transition probability of overlap
     """
     # Label overlap possible with additional atoms
@@ -144,14 +158,17 @@ def warn_direct_overlap(
 def calc_label_diff_prob(label1, difference_labels, molecule_info):
     """Calculate the transition probablity of difference in labelled atoms.
 
-    :param label1: dict
+    Parameters
+    ----------
+    label1 : dict
         Isotope symbol (e.g. N15) as key and number of atoms as value
-    :param difference_labels: dict
+    difference_labels : dict
         Isotope symbol (e.g. N15) as key and number of atoms as value
-    :param n_atoms: dict
-        Element symbol as key and number of atoms as value
-    :param isotopes_file: Path to isotope file
-    :return: float
+    molecule_info : MoleculeInfo
+        Instance with molecule and isotope information.
+    Returns
+    -------
+    float
         Transition probability
     """
     n_atoms = molecule_info.formula

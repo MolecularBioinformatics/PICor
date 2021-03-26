@@ -32,28 +32,34 @@ def calc_isotopologue_correction(
     Takes pandas DataFrame and calculates isotopologue correction
     for molecule in molecules file, returns DataFrame with corrected values.
     Only C13 and N15 is supported as column labels right now e.g. 5C13
-    :param  raw_data: pandas DataFrame
+
+    Parameters
+    ----------
+    raw_data : pandas.DataFrame
         DataFrame of integrated lowest peaks per species vs time
-    :param molecule_name: str
+    molecule_name : str
         molecule name as in molecules_file
-    :param subset: list of str or False
+    subset : list of str or False, optional
         List of column names to use for calculation
-    :param exclude_col: list of str
+    exclude_col : list of str, optional
         Columns to ignore in calculation
-    :param resolution_correction: bool (default: False)
+    resolution_correction : bool, optional
         Run additonal correction for isotopologues overlaping
         due to low resolution. For example H02 and C13
-    :param mz_calibration: float (default: 200)
+    mz_calibration : float, optional
         mass-charge ratio of calibration point
-    :param resolution: float (default: 60_000)
+    resolution : float, optional
         Resolution at calibration mz
-    :param isotopes_file: Path to isotope file
+    isotopes_file : Path or str, optional
         tab-separated file with element, mass, abundance and isotope as rows
         e.g. H 1.008 0.99 H01
-    :param molecules_file: Path to molecules file
+    molecules_file : Path or str, optional
         tab-separated file with name, formula and charge as rows
         e.g. Suc C4H4O3 -1
-    :return: pandas DataFrame
+
+    Returns
+    -------
+    pandas.DataFrame
         Corrected data
     """
     if not isotopes_file:

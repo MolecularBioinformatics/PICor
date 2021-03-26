@@ -17,11 +17,16 @@ __license__ = "gpl3"
 
 
 class IsotopeInfo:
+    """Class containing isotope data."""
+
     def __init__(self, isotopes_file):
-        """
-            :param isotopes_file: str
-                File path to isotopes file
-                comma separated csv with element and abundance columns
+        """Data class containing isotope information.
+
+        Parameter
+        ---------
+        isotopes_file : str or Path
+            File path to isotopes file
+            comma separated csv with element and abundance columns
         """
         self.isotopes_file = isotopes_file
         self.abundance = self.get_isotope_abundance(isotopes_file)
@@ -32,7 +37,17 @@ class IsotopeInfo:
         """Get abundace of different isotopes.
 
         Parse file with abundance of different isotopes
-        :return: dict
+
+        Parameters
+        ----------
+        isotopes_file : str or Path
+            File path to isotopes file
+            comma separated csv with element and abundance columns
+
+        Returns
+        -------
+        dict
+            Abundance of isotope.
         """
         isotopes = pd.read_csv(isotopes_file, sep="\t")
         isotopes.set_index("element", drop=True, inplace=True)
@@ -46,7 +61,19 @@ class IsotopeInfo:
 
     @staticmethod
     def get_isotope_mass_series(isotopes_file):
-        """Get series of isotope masses."""
+        """Get series of isotope masses.
+
+        Parameters
+        ----------
+        isotopes_file : str or Path
+            File path to isotopes file
+            comma separated csv with element and abundance columns
+
+        Returns
+        -------
+        pandas.Series
+            Isotope names and masses
+        """
         return pd.read_csv(
             isotopes_file,
             sep="\t",
@@ -57,11 +84,20 @@ class IsotopeInfo:
 
 
 class MoleculeInfo:
+    """Class containing molecule data."""
     def __init__(self, molecule_name, molecules_file, isotopes_file):
-        """
-            :param isotopes_file: str
-                File path to isotopes file
-                comma separated csv with element and abundance columns
+        """Class contains molecule name, formula and isotope data.
+
+        Parameters
+        ----------
+        molecule_name : str
+            Molecule name as in molecules_file.
+        molecules_file : str or Path
+            tab-separated file with name, formula and charge as rows
+            e.g. Suc C4H4O3 -1
+        isotopes_file : str or Path
+            File path to isotopes file
+            comma separated csv with element and abundance columns
         """
         self.molecule_name = molecule_name
         self.isotopes = IsotopeInfo(isotopes_file)
@@ -71,25 +107,30 @@ class MoleculeInfo:
 
     @staticmethod
     def get_molecule_list(molecules_file):
+        """Read and return molecule_list."""
         molecule_list = pd.read_csv(molecules_file, sep="\t", na_filter=False)
         molecule_list["formula"] = molecule_list["formula"].apply(parse_formula)
         molecule_list.set_index("name", drop=True, inplace=True)
         return molecule_list
 
     def get_formula(self):
-        """Get molecular formula from file.
+        """Return molecular formula.
 
         Parse and look up molecular formula of molecule and
         return number of atoms per element
-        :param molecule: str
-            Name of molecule used in molecules_file
-        :param molecules_file: str
-            File path to isotopes file
-            tab-separated csv with name and formula columns
-        :param isotopes_file: Path to isotope file
-            File path to isotopes file, tab separated
-        :return: dict
-            Elements and number
+
+        Returns
+        -------
+        dict
+            Elements as keys
+            Number of atoms as values
+
+        Raises
+        ------
+        KeyError
+            If molecule is not contained in molecules_file.
+        ValueError
+            If unknown element in molecule formula.
         """
         try:
             n_atoms = self.molecule_list.loc[self.molecule_name].formula
@@ -112,10 +153,10 @@ class MoleculeInfo:
         )
         try:
             charges = charges.astype(int)
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 "Charge of at least one molecule missing in molecules_file"
-            )
+            ) from exc
         return charges[self.molecule_name]
 
     def get_molecule_light_isotopes(self):
@@ -152,11 +193,21 @@ class MoleculeInfo:
         """Calculate mass of isotopologue.
 
         Given the molecule name and label composition, return mass in atomic units.
-        :param molecule_name: str
-            Name as in molecule_file
-        :param label: str or dict
+
+        Parameters
+        ----------
+        label : str or dict
             "No label" or formula, can contain whitespaces
-        :returns: float
+
+        Returns
+        -------
+        float
+            Molecule mass
+
+        Raises
+        ------
+        ValueError
+            If label is neither str nor dict.
         """
         if isinstance(label, str):
             label_dict = parse_label(label)
@@ -181,8 +232,16 @@ def parse_formula(string):
     of elements and number of atoms.
     Be careful, no input check is happening!
 
-    :param string: Str of chemical formula
-    :return : Dict of str and int
+    Parameters
+    ----------
+    string : str
+        chemical formula as string
+
+    Returns
+    -------
+    dict
+        Elements as keys
+        Number as values
     """
     elements = re.findall(r"([A-Z][a-z]*)(\d*)", string)
     return {elem: int(num) if num != "" else 1 for elem, num in elements}
@@ -195,8 +254,26 @@ def parse_label(string):
     Only support H02 (deuterium), C13, N15 and 'No label'
     Prefix separated by colon can be used and will be ignored, e.g. "NA:2C13"
     Underscores can be used to separate different elements, e.g. "3C13_6H02"
-    :param string: Str of chemical formula
-    :return : Dict of str and int
+
+    Parameters
+    ----------
+    string : str
+        Chemical formula
+
+    Returns
+    -------
+    dict
+        Elements as keys
+        Number as values
+
+    Raises
+    ------
+    TypeError
+        If input is not string.
+    ValueError
+       If label contains more than one colon.
+    ValueError
+        If label contains not allowed isotopes.
     """
     if not isinstance(string, str):
         raise TypeError("label must be string")
@@ -235,10 +312,21 @@ def sort_labels(labels):
 
     Sort list of molecule labels by coarse mass
     (number of neutrons) from lower to higher mass
-    :param labels: list of str
+
+    Parameters
+    ----------
+    labels : list of str
         labels (e.g. ["No label","N15","5C13"])
-    :return: list of str
+
+    Returns
+    -------
+    list of str
         Sorted list
+
+    Raises
+    ------
+    TypeError
+        If labels are str.
     """
     if isinstance(labels, str):
         raise TypeError("labels must be list-like but not string")
@@ -258,11 +346,17 @@ def label_shift_smaller(label1, label2):
     than for label2 and returns True if that is the case.
     Only support H02 (deuterium),  C13 and N15 as labels.
     label can also be "No label" or something similar.
-    :param label1: str or dict
+
+    Parameters
+    ----------
+    label1 : str or dict
         Label of isotopologue 1
-    :param label2: str or dict
+    label2 : str or dict
         Label of isotopologue 2
-    :return: Boolean
+
+    Returns
+    -------
+    bool
         True if label 1 is smaller than label 2, otherwise False
     """
     if isinstance(label1, str):
@@ -281,29 +375,25 @@ def calc_correction_factor(
     """Calculate correction factor with molecule composition defined by label.
 
     Label supports only H02 (deuterium), C13, N15 and 'No label'.
-    :param metabolite: str of metabolite name
-        Name must be found in metabolites_file
-    :param label: False or str of type and number of atoms
-        E.g. '5C13N15' or 'No label'. False equals to no label
-    :param isotopes_file: Path to isotope file
-        default location: scripts/isotope_correction/isotopes.csv
-    :param metabolites_file: Path to metabolites file
-        default location: scripts/isotope_correction/metabolites.csv
-    :return: float
-        Correction factor
-    """
-    # if not isotopes_file:
-    #     path = os.path.abspath(__file__)
-    #     dir_path = os.path.dirname(path)
-    #     isotopes_file = os.path.join(dir_path, "isotopes.csv")
-    # if not metabolites_file:
-    #     path = os.path.abspath(__file__)
-    #     dir_path = os.path.dirname(path)
-    #     metabolites_file = os.path.join(dir_path, "metabolites.csv")
-    # global ABUNDANCE
-    # if not ABUNDANCE:
-    #     ABUNDANCE = get_isotope_abundance(isotopes_file)
 
+    Parameters
+    ----------
+    molecule_info : MoleculeInfo
+        Instance with molecule and isotope information.
+    label : False or str
+        Type and number of atoms.
+        E.g. '5C13N15' or 'No label'. False equals to no label
+
+    Returns
+    -------
+    float
+        Correction factor
+
+    Raises
+    ------
+    ValueError
+        If there's more labelled atoms than atoms.
+    """
     # Parse label and store information in atom_label dict
     atom_label = {}
     if label:
@@ -327,18 +417,24 @@ def calc_correction_factor(
 def calc_transition_prob(label1, label2, molecule_info):
     """Calculate the probablity between two (un-)labelled isotopologues.
 
-    :param label1: str or dict
+    Parameters
+    ----------
+    label1 : str or dict
         Type of isotopic label, e.g. 1N15
-    :param label2: str or dict
+    label2 : str or dict
         Type of isotopic label, e.g. 10C1301N15
-    :param metabolite_formula: str or dict
-        Molecular formula or dict of elements and number
-    :param isotopes_file: Path to isotope file
-        default location: ~/isocordb/Isotopes.dat
-    :param metabolites_file: Path to metabolites file
-        default location: ~/isocordb/Metabolites.dat
-    :return: float
+    molecule_info : MoleculeInfo
+        Instance with molecule and isotope information.
+
+    Returns
+    -------
+    float
         Transition probability
+
+    Raises
+    ------
+    TypeError
+        If molecule_info is not correct type.
     """
     if isinstance(label1, str):
         label1 = parse_label(label1)
@@ -361,16 +457,14 @@ def calc_transition_prob(label1, label2, molecule_info):
     if difference_labels.lt(0).any():
         return 0
 
-    abundance = molecule_info.isotopes.abundance
-
     prob = []
     for elem in difference_labels.index:
         n_elem_1 = label1.get(elem, 0)
         n_elem_2 = label2.get(elem, 0)
         n_unlab = n_atoms[elem] - n_elem_2
         n_label = difference_labels[elem]
-        abun_unlab = abundance[elem][0]
-        abun_lab = abundance[elem][1]
+        abun_unlab = molecule_info.isotopes.abundance[elem][0]
+        abun_lab = molecule_info.isotopes.abundance[elem][1]
         if n_label == 0:
             continue
 
