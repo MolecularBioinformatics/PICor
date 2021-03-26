@@ -65,6 +65,7 @@ class MoleculeInfo:
         """
         self.molecule_name = molecule_name
         self.isotopes = IsotopeInfo(isotopes_file)
+        self.molecules_file = molecules_file
         self.molecule_list = self.get_molecule_list(molecules_file)
         self.formula = self.get_molecule_formula()
 
@@ -99,6 +100,21 @@ class MoleculeInfo:
         if not all(element in self.isotopes.abundance for element in n_atoms):
             raise ValueError("Unknown element in molecule")
         return n_atoms
+    
+    def get_metabolite_charge(self):
+        """Get charge of metabolite."""
+        charges = pd.read_csv(
+            self.molecules_file,
+            sep="\t",
+            usecols=["name", "charge"],
+            index_col="name",
+            squeeze=True,
+        )
+        try:
+            charges = charges.astype(int)
+        except ValueError:
+            raise ValueError("Charge of at least one molecule missing in molecules_file")
+        return charges[self.molecule_name]
 
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""

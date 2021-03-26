@@ -168,6 +168,7 @@ class TestMoleculeInfo(unittest.TestCase):
     """Label and formula parsing."""
 
     metabolites_file = Path("tests/test_metabolites.csv")
+    metabolites_file2 = Path("tests/test_metabolites_missing_charge.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_init_attributes_type(self):
@@ -222,6 +223,19 @@ class TestMoleculeInfo(unittest.TestCase):
         molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
         with self.assertRaises(ValueError):
             molecule.calc_isotopologue_mass("55C13")
+
+    def test_get_charge_result(self):
+        """Correct molecule charge."""
+        molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
+        res = molecule.get_metabolite_charge()
+        self.assertEqual(res, 1)
+
+    def test_get_charge_column_missing(self):
+        """ValueError if value in 'charge' column is missing."""
+        molecule = ip.MoleculeInfo("Test4", self.metabolites_file2, self.isotopes_file,)
+        with self.assertRaises(ValueError):
+            molecule.get_metabolite_charge()
+
 
 
 class TestCorrectionFactor(unittest.TestCase):

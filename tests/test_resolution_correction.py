@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 import unittest
 
+from picor.isotope_probabilities import MoleculeInfo
 import picor.resolution_correction as rc
 
 
@@ -16,8 +17,11 @@ __license__ = "gpl3"
 class TestMassCalculations(unittest.TestCase):
     """Molecule mass and minimum mass difference."""
 
-    metabolites_file = Path("tests/test_metabolites.csv")
+    molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = MoleculeInfo(
+        "Test1", molecules_file=molecules_file, isotopes_file=isotopes_file,
+    )
 
     def test_calc_min_mass_diff_result(self):
         """Minimal mass difference."""
@@ -31,29 +35,21 @@ class TestMassCalculations(unittest.TestCase):
 
     def test_is_overlap_true(self):
         """Overlapping isotopologues"""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         res = rc.is_isotologue_overlap(
             "5C13",
             "4C13 1H02",
-            "Test1",
+            self.molecule_info,
             0.04,
-            isotope_mass_series,
-            self.metabolites_file,
-            self.isotopes_file,
         )
         self.assertTrue(res)
 
     def test_is_overlap_false(self):
         """Non overlapping isotopologues"""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
         res = rc.is_isotologue_overlap(
             "14C13",
             "14H02",
-            "Test1",
+            self.molecule_info,
             0.04,
-            isotope_mass_series,
-            self.metabolites_file,
-            self.isotopes_file,
         )
         self.assertFalse(res)
 
@@ -82,18 +78,19 @@ class TestMassCalculations(unittest.TestCase):
 class TestOverlapWarnings(unittest.TestCase):
     """Overlap warnings."""
 
-    metabolites_file = Path("tests/test_metabolites.csv")
+    molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = MoleculeInfo(
+        "Test1", molecules_file=molecules_file, isotopes_file=isotopes_file,
+    )
 
     def test_direct_overlap_warn(self):
         """Warning with overlapping labels."""
         with self.assertWarns(UserWarning):
             rc.warn_direct_overlap(
                 ["4H02", "4C13"],
-                "Test1",
+                self.molecule_info,
                 0.05,
-                self.metabolites_file,
-                self.isotopes_file,
             )
 
     def test_indirect_overlap_warn(self):
@@ -102,5 +99,5 @@ class TestOverlapWarnings(unittest.TestCase):
         for labels in label_list:
             with self.assertWarns(UserWarning):
                 rc.warn_indirect_overlap(
-                    labels, "Test1", 0.05, self.metabolites_file, self.isotopes_file
+                    labels, self.molecule_info, 0.05,
                 )

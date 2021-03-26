@@ -15,19 +15,13 @@ import pandas as pd
 from scipy.special import binom
 
 from picor.isotope_probabilities import (
-    assign_light_isotopes,
-    get_isotope_mass_series,
-    get_isotope_abundance,
-    get_metabolite_formula,
+    MoleculeInfo,
     parse_label,
-    subtract_label,
 )
 
 __author__ = "Jørn Dietze"
 __copyright__ = "Jørn Dietze"
 __license__ = "gpl3"
-
-ABUNDANCE = None
 
 
 def fwhm(mz_cal, mz, resolution):
@@ -57,18 +51,6 @@ def calc_min_mass_diff(mass, charge, mz_cal, resolution):
     return 1.66 * abs(charge) * fwhm(mz_cal, mz, resolution)
 
 
-def get_metabolite_charge(metabolite_name, metabolites_file):
-    """Get charge of metabolite."""
-    charges = pd.read_csv(
-        metabolites_file,
-        sep="\t",
-        usecols=["name", "charge"],
-        index_col="name",
-        squeeze=True,
-    )
-    return charges[metabolite_name]
-
-
 def calc_coarse_mass_difference(label1, label2):
     """Calculate difference in nucleons (e.g. 2 between H20 and D20).
 
@@ -82,38 +64,33 @@ def calc_coarse_mass_difference(label1, label2):
 def is_isotologue_overlap(
     label1,
     label2,
-    metabolite_name,
+    molecule_info,
     min_mass_diff,
-    isotope_mass_series,
-    metabolites_file,
-    isotopes_file,
 ):
     """Return True if label1 and label2 are too close to detection limit.
 
     Checks whether two isotopologues defined by label and metabolite name
     are below miniumum resolved mass difference.
     """
-    mass1 = calc_isotopologue_mass(
-        metabolite_name, label1, isotope_mass_series, metabolites_file, isotopes_file
+    mass1 = molecule_info.calc_isotopologue_mass(
+        label1
     )
-    mass2 = calc_isotopologue_mass(
-        metabolite_name, label2, isotope_mass_series, metabolites_file, isotopes_file
+    mass2 = molecule_info.calc_isotopologue_mass(
+        label2
     )
     return abs(mass1 - mass2) < min_mass_diff
 
 
 def warn_indirect_overlap(
-    label_list, metabolite_name, min_mass_diff, metabolites_file, isotopes_file
+    label_list, molecule_info, min_mass_diff,
 ):
     """Warn if any of labels can have indirect overlap."""
     for label1, label2 in itertools.permutations(label_list, 2):
         prob = calc_indirect_overlap_prob(
             label1,
             label2,
-            metabolite_name,
+            molecule_info,
             min_mass_diff,
-            metabolites_file,
-            isotopes_file,
         )
         if prob:
             warnings.warn(
@@ -122,7 +99,7 @@ def warn_indirect_overlap(
 
 
 def calc_indirect_overlap_prob(
-    label1, label2, metabolite_name, min_mass_diff, metabolites_file, isotopes_file
+    label1, label2, molecule_info, min_mass_diff,
 ):
     """Calculate probability for overlap caused by random H02 and C13 incoporation.
 
@@ -143,8 +120,6 @@ def calc_indirect_overlap_prob(
         Transition probability of overlap
     """
     # Label overlap possible with additional atoms
-    n_atoms = get_metabolite_formula(metabolite_name, metabolites_file, isotopes_file)
-    isotope_mass_series = get_isotope_mass_series(isotopes_file)
     coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
     if coarse_mass_difference <= 0:
         return 0
@@ -168,39 +143,32 @@ def calc_indirect_overlap_prob(
         if is_isotologue_overlap(
             label1_mod,
             label2,
-            metabolite_name,
+            molecule_info,
             min_mass_diff,
-            isotope_mass_series,
-            metabolites_file,
-            isotopes_file,
         ):
             probs[n_c] = calc_label_diff_prob(
-                label1, label_trans, n_atoms, isotopes_file
+                label1, label_trans, molecule_info
             )
     prob_total = sum(probs.values())
     return prob_total
 
 
 def warn_direct_overlap(
-    label_list, metabolite_name, min_mass_diff, metabolites_file, isotopes_file
+    label_list, molecule_info, min_mass_diff,
 ):
     """Warn if any of labels can have overlap."""
-    isotope_mass_series = get_isotope_mass_series(isotopes_file)
     for label1, label2 in itertools.permutations(label_list, 2):
         # Direct label overlap
         if is_isotologue_overlap(
             label1,
             label2,
-            metabolite_name,
+            molecule_info,
             min_mass_diff,
-            isotope_mass_series,
-            metabolites_file,
-            isotopes_file,
         ):
             warnings.warn(f"Direct overlap of {label1} and {label2}")
 
 
-def calc_label_diff_prob(label1, difference_labels, n_atoms, isotopes_file):
+def calc_label_diff_prob(label1, difference_labels, molecule_info):
     """Calculate the transition probablity of difference in labelled atoms.
 
     :param label1: dict
@@ -213,9 +181,8 @@ def calc_label_diff_prob(label1, difference_labels, n_atoms, isotopes_file):
     :return: float
         Transition probability
     """
-    global ABUNDANCE
-    if not ABUNDANCE:
-        ABUNDANCE = get_isotope_abundance(isotopes_file)
+    n_atoms = molecule_info.formula
+    abundance = molecule_info.isotopes.abundance
 
     prob = []
     for isotope, n_label in difference_labels.items():
@@ -224,8 +191,8 @@ def calc_label_diff_prob(label1, difference_labels, n_atoms, isotopes_file):
         elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
 
         n_unlab = n_atoms[elem] - n_elem_1 - n_label
-        abun_unlab = ABUNDANCE[elem][0]
-        abun_lab = ABUNDANCE[elem][1]
+        abun_unlab = abundance[elem][0]
+        abun_lab = abundance[elem][1]
         if n_label == 0:
             continue
 
