@@ -19,66 +19,6 @@ class TestMassCalculations(unittest.TestCase):
     metabolites_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
 
-    def test_mass_nolabel(self):
-        """Molecule mass calculation without label."""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
-        res = rc.calc_isotopologue_mass(
-            "Test1",
-            "No label",
-            isotope_mass_series,
-            self.metabolites_file,
-            self.isotopes_file,
-        )
-        self.assertAlmostEqual(res, 664.116947, places=5)
-
-    def test_mass_label(self):
-        """Molecule mass calculation with correct label."""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
-        res = rc.calc_isotopologue_mass(
-            "Test1",
-            "15C13",
-            isotope_mass_series,
-            self.metabolites_file,
-            self.isotopes_file,
-        )
-        self.assertAlmostEqual(res, 679.167270, places=5)
-
-    def test_mass_label_dict(self):
-        """Molecule mass calculation with dict as label."""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
-        res = rc.calc_isotopologue_mass(
-            "Test1",
-            {"C13": 15},
-            isotope_mass_series,
-            self.metabolites_file,
-            self.isotopes_file,
-        )
-        self.assertAlmostEqual(res, 679.167270, places=5)
-
-    def test_mass_bad_label_type(self):
-        """ValueError for Molecule mass calculation with list as label."""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
-        with self.assertRaises(ValueError):
-            rc.calc_isotopologue_mass(
-                "Test1",
-                ["55C13"],
-                isotope_mass_series,
-                self.metabolites_file,
-                self.isotopes_file,
-            )
-
-    def test_mass_bad_label(self):
-        """ValueError for Molecule mass calculation with too large label."""
-        isotope_mass_series = rc.get_isotope_mass_series(self.isotopes_file)
-        with self.assertRaises(ValueError):
-            rc.calc_isotopologue_mass(
-                "Test1",
-                "55C13",
-                isotope_mass_series,
-                self.metabolites_file,
-                self.isotopes_file,
-            )
-
     def test_calc_min_mass_diff_result(self):
         """Minimal mass difference."""
         res = rc.calc_min_mass_diff(680, 2, 200, 50000)

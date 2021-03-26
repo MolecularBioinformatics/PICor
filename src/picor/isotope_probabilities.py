@@ -103,7 +103,7 @@ class MoleculeInfo:
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""
         molecule_series = pd.Series(
-            self.get_molecule_formula(self.molecule_name), dtype="int64",
+            self.get_molecule_formula(), dtype="int64",
         )
         result = molecule_series.rename(
             {

@@ -204,6 +204,56 @@ class TestMoleculeInfo(unittest.TestCase):
                 "Test3", self.metabolites_file, self.isotopes_file
             )
 
+    def test_mass_nolabel(self):
+        """Molecule mass calculation without label."""
+        molecule = ip.MoleculeInfo(
+            "Test1",
+            self.metabolites_file,
+            self.isotopes_file,
+        )
+        res = molecule.calc_isotopologue_mass("No label")
+        self.assertAlmostEqual(res, 664.116947, places=5)
+
+    def test_mass_label(self):
+        """Molecule mass calculation with correct label."""
+        molecule = ip.MoleculeInfo(
+            "Test1",
+            self.metabolites_file,
+            self.isotopes_file,
+        )
+        res = molecule.calc_isotopologue_mass("15C13")
+        self.assertAlmostEqual(res, 679.167270, places=5)
+
+    def test_mass_label_dict(self):
+        """Molecule mass calculation with dict as label."""
+        molecule = ip.MoleculeInfo(
+            "Test1",
+            self.metabolites_file,
+            self.isotopes_file,
+        )
+        res = molecule.calc_isotopologue_mass({"C13": 15})
+        self.assertAlmostEqual(res, 679.167270, places=5)
+
+    def test_mass_bad_label_type(self):
+        """ValueError for Molecule mass calculation with list as label."""
+        molecule = ip.MoleculeInfo(
+            "Test1",
+            self.metabolites_file,
+            self.isotopes_file,
+        )
+        with self.assertRaises(ValueError):
+            molecule.calc_isotopologue_mass(["55C13"])
+
+    def test_mass_bad_label(self):
+        """ValueError for Molecule mass calculation with too large label."""
+        molecule = ip.MoleculeInfo(
+            "Test1",
+            self.metabolites_file,
+            self.isotopes_file,
+        )
+        with self.assertRaises(ValueError):
+            molecule.calc_isotopologue_mass("55C13")
+
 
 class TestCorrectionFactor(unittest.TestCase):
     """Calculation of correction factor."""
@@ -274,6 +324,17 @@ class TestTransitionProbability(unittest.TestCase):
         res = ip.calc_transition_prob(
             label1,
             label1,
+            self.molecule_info,
+        )
+        self.assertEqual(res, 0)
+
+    def test_result_label_missmatch(self):
+        """Result with no possbile transition."""
+        label1 = "2N153C13"
+        label2 = "1N155C13"
+        res = ip.calc_transition_prob(
+            label1,
+            label2,
             self.molecule_info,
         )
         self.assertEqual(res, 0)
