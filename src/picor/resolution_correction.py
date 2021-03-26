@@ -14,10 +14,7 @@ import warnings
 import pandas as pd
 from scipy.special import binom
 
-from picor.isotope_probabilities import (
-    MoleculeInfo,
-    parse_label,
-)
+from picor.isotope_probabilities import parse_label
 
 __author__ = "Jørn Dietze"
 __copyright__ = "Jørn Dietze"
