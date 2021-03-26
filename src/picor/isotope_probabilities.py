@@ -100,7 +100,7 @@ class MoleculeInfo:
         if not all(element in self.isotopes.abundance for element in n_atoms):
             raise ValueError("Unknown element in molecule")
         return n_atoms
-    
+
     def get_charge(self):
         """Get charge of molecule."""
         charges = pd.read_csv(
@@ -113,7 +113,9 @@ class MoleculeInfo:
         try:
             charges = charges.astype(int)
         except ValueError:
-            raise ValueError("Charge of at least one molecule missing in molecules_file")
+            raise ValueError(
+                "Charge of at least one molecule missing in molecules_file"
+            )
         return charges[self.molecule_name]
 
     def get_molecule_light_isotopes(self):

@@ -62,22 +62,15 @@ def calc_coarse_mass_difference(label1, label2):
 
 
 def is_isotologue_overlap(
-    label1,
-    label2,
-    molecule_info,
-    min_mass_diff,
+    label1, label2, molecule_info, min_mass_diff,
 ):
     """Return True if label1 and label2 are too close to detection limit.
 
     Checks whether two isotopologues defined by label and metabolite name
     are below miniumum resolved mass difference.
     """
-    mass1 = molecule_info.calc_isotopologue_mass(
-        label1
-    )
-    mass2 = molecule_info.calc_isotopologue_mass(
-        label2
-    )
+    mass1 = molecule_info.calc_isotopologue_mass(label1)
+    mass2 = molecule_info.calc_isotopologue_mass(label2)
     return abs(mass1 - mass2) < min_mass_diff
 
 
@@ -86,12 +79,7 @@ def warn_indirect_overlap(
 ):
     """Warn if any of labels can have indirect overlap."""
     for label1, label2 in itertools.permutations(label_list, 2):
-        prob = calc_indirect_overlap_prob(
-            label1,
-            label2,
-            molecule_info,
-            min_mass_diff,
-        )
+        prob = calc_indirect_overlap_prob(label1, label2, molecule_info, min_mass_diff,)
         if prob:
             warnings.warn(
                 f"{label1} indirect overlap with {label2} with prob {prob:.4f}"
@@ -140,15 +128,8 @@ def calc_indirect_overlap_prob(
         label_trans = {"C13": n_c, "H02": n_h}
         label_trans_series = pd.Series(label_trans, dtype="float64")
         label1_mod = dict(label1_series.add(label_trans_series, fill_value=0))
-        if is_isotologue_overlap(
-            label1_mod,
-            label2,
-            molecule_info,
-            min_mass_diff,
-        ):
-            probs[n_c] = calc_label_diff_prob(
-                label1, label_trans, molecule_info
-            )
+        if is_isotologue_overlap(label1_mod, label2, molecule_info, min_mass_diff,):
+            probs[n_c] = calc_label_diff_prob(label1, label_trans, molecule_info)
     prob_total = sum(probs.values())
     return prob_total
 
@@ -159,12 +140,7 @@ def warn_direct_overlap(
     """Warn if any of labels can have overlap."""
     for label1, label2 in itertools.permutations(label_list, 2):
         # Direct label overlap
-        if is_isotologue_overlap(
-            label1,
-            label2,
-            molecule_info,
-            min_mass_diff,
-        ):
+        if is_isotologue_overlap(label1, label2, molecule_info, min_mass_diff,):
             warnings.warn(f"Direct overlap of {label1} and {label2}")
 
 

@@ -73,9 +73,7 @@ def calc_isotopologue_correction(
 
     molecule_info = ip.MoleculeInfo(molecule_name, molecules_file, isotopes_file)
     if resolution_correction:
-        mass = molecule_info.calc_isotopologue_mass(
-            "No label",
-        )
+        mass = molecule_info.calc_isotopologue_mass("No label",)
         charge = molecule_info.get_charge()
         min_mass_diff = rc.calc_min_mass_diff(mass, charge, mz_calibration, resolution)
         rc.warn_direct_overlap(
@@ -83,9 +81,7 @@ def calc_isotopologue_correction(
         )
 
     for label1 in subset:
-        corr = ip.calc_correction_factor(
-            molecule_info, label1,
-        )
+        corr = ip.calc_correction_factor(molecule_info, label1,)
         assert corr >= 1, "Correction factor should be greater or equal 1"
         data[label1] = corr * data[label1]
         _logger.info(f"Correction factor {label1}: {corr}")
@@ -93,18 +89,13 @@ def calc_isotopologue_correction(
             if ip.label_shift_smaller(label1, label2):
                 if resolution_correction:
                     indirect_overlap_prob = rc.calc_indirect_overlap_prob(
-                        label1,
-                        label2,
-                        molecule_info,
-                        min_mass_diff,
+                        label1, label2, molecule_info, min_mass_diff,
                     )
                     data[label2] = data[label2] - indirect_overlap_prob * data[label1]
                     _logger.info(
                         f"Overlapping prob {label1} -> {label2}: {indirect_overlap_prob}"
                     )
-                trans_prob = ip.calc_transition_prob(
-                    label1, label2, molecule_info,
-                )
+                trans_prob = ip.calc_transition_prob(label1, label2, molecule_info,)
                 data[label2] = data[label2] - trans_prob * data[label1]
                 data[label2].clip(lower=0, inplace=True)
                 _logger.info(f"Transition prob {label1} -> {label2}: {trans_prob}")

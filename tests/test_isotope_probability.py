@@ -237,7 +237,6 @@ class TestMoleculeInfo(unittest.TestCase):
             molecule.get_charge()
 
 
-
 class TestCorrectionFactor(unittest.TestCase):
     """Calculation of correction factor."""
 
