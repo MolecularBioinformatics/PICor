@@ -15,7 +15,7 @@ __license__ = "gpl3"
 class TestLabels(unittest.TestCase):
     """Label and formula parsing."""
 
-    metabolites_file = Path("tests/test_metabolites.csv")
+    molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_formula_string(self):
@@ -167,13 +167,13 @@ class TestIsotopeInfo(unittest.TestCase):
 class TestMoleculeInfo(unittest.TestCase):
     """Label and formula parsing."""
 
-    metabolites_file = Path("tests/test_metabolites.csv")
-    metabolites_file2 = Path("tests/test_metabolites_missing_charge.csv")
+    molecules_file = Path("tests/test_metabolites.csv")
+    molecules_file2 = Path("tests/test_metabolites_missing_charge.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_init_attributes_type(self):
         """Type of instance attributes."""
-        ins = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file)
+        ins = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file)
         self.assertIsInstance(ins.molecule_name, str)
         self.assertIsInstance(ins.isotopes, ip.IsotopeInfo)
         self.assertIsInstance(ins.molecule_list, pandas.DataFrame)
@@ -181,60 +181,60 @@ class TestMoleculeInfo(unittest.TestCase):
 
     def test_init_formula_result(self):
         """Return right fields"""
-        ins = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file)
+        ins = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file)
         self.assertDictEqual(ins.formula, {"C": 21, "H": 28, "N": 7, "O": 14, "P": 2})
 
     def test_molecule_name_unknown(self):
         """Raise KeyError with undefined molecule name."""
         with self.assertRaises(KeyError):
-            ip.MoleculeInfo("Unknown", self.metabolites_file, self.isotopes_file)
+            ip.MoleculeInfo("Unknown", self.molecules_file, self.isotopes_file)
 
-    def test_get_metabolite_formula_invalid_element(self):
+    def test_get_molecule_formula_invalid_element(self):
         """Raise ValueError with invalid element in molecule formula."""
         with self.assertRaises(ValueError):
-            ip.MoleculeInfo("Test3", self.metabolites_file, self.isotopes_file)
+            ip.MoleculeInfo("Test3", self.molecules_file, self.isotopes_file)
 
     def test_mass_nolabel(self):
         """Molecule mass calculation without label."""
-        molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
+        molecule = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file,)
         res = molecule.calc_isotopologue_mass("No label")
         self.assertAlmostEqual(res, 664.116947, places=5)
 
     def test_mass_label(self):
         """Molecule mass calculation with correct label."""
-        molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
+        molecule = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file,)
         res = molecule.calc_isotopologue_mass("15C13")
         self.assertAlmostEqual(res, 679.167270, places=5)
 
     def test_mass_label_dict(self):
         """Molecule mass calculation with dict as label."""
-        molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
+        molecule = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file,)
         res = molecule.calc_isotopologue_mass({"C13": 15})
         self.assertAlmostEqual(res, 679.167270, places=5)
 
     def test_mass_bad_label_type(self):
         """ValueError for Molecule mass calculation with list as label."""
-        molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
+        molecule = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file,)
         with self.assertRaises(ValueError):
             molecule.calc_isotopologue_mass(["55C13"])
 
     def test_mass_bad_label(self):
         """ValueError for Molecule mass calculation with too large label."""
-        molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
+        molecule = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file,)
         with self.assertRaises(ValueError):
             molecule.calc_isotopologue_mass("55C13")
 
     def test_get_charge_result(self):
         """Correct molecule charge."""
-        molecule = ip.MoleculeInfo("Test1", self.metabolites_file, self.isotopes_file,)
-        res = molecule.get_metabolite_charge()
+        molecule = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file,)
+        res = molecule.get_molecule_charge()
         self.assertEqual(res, 1)
 
     def test_get_charge_column_missing(self):
         """ValueError if value in 'charge' column is missing."""
-        molecule = ip.MoleculeInfo("Test4", self.metabolites_file2, self.isotopes_file,)
+        molecule = ip.MoleculeInfo("Test4", self.molecules_file2, self.isotopes_file,)
         with self.assertRaises(ValueError):
-            molecule.get_metabolite_charge()
+            molecule.get_molecule_charge()
 
 
 
@@ -308,8 +308,8 @@ class TestTransitionProbability(unittest.TestCase):
         res = ip.calc_transition_prob(label1, label2, self.molecule_info,)
         self.assertEqual(res, 0)
 
-    def test_result_metabolite_formula(self):
-        """Result with metabolite formula."""
+    def test_result_molecule_formula(self):
+        """Result with molecule formula."""
         label1 = "1N15"
         label2 = "2N152C13"
         molecule_info = ip.MoleculeInfo(
@@ -321,7 +321,7 @@ class TestTransitionProbability(unittest.TestCase):
         self.assertAlmostEqual(res, 0.00042029)
 
     def test_wrong_type(self):
-        """Type error with dict as metabolite."""
+        """Type error with dict as molecule."""
         label1 = "1N15"
         label2 = "2N152C13"
         molecule = {"C": 12, "N": 15}

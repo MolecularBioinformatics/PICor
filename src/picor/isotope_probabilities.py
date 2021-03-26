@@ -1,7 +1,7 @@
 """Isotopologue correction functions.
 
 Functions:
-    calc_correction_factor: Get correction factor for metabolite and label.
+    calc_correction_factor: Get correction factor for molecule and label.
     calc_transition_prob: Get transition probablity for two isotopologues.
 """
 from functools import reduce
@@ -101,8 +101,8 @@ class MoleculeInfo:
             raise ValueError("Unknown element in molecule")
         return n_atoms
     
-    def get_metabolite_charge(self):
-        """Get charge of metabolite."""
+    def get_molecule_charge(self):
+        """Get charge of molecule."""
         charges = pd.read_csv(
             self.molecules_file,
             sep="\t",
@@ -229,9 +229,9 @@ def isotope_to_element(label):
 
 
 def sort_labels(labels):
-    """Sort list of metabolite labels by coarse mass.
+    """Sort list of molecule labels by coarse mass.
 
-    Sort list of metabolite labels by coarse mass
+    Sort list of molecule labels by coarse mass
     (number of neutrons) from lower to higher mass
     :param labels: list of str
         labels (e.g. ["No label","N15","5C13"])
@@ -276,7 +276,7 @@ def label_shift_smaller(label1, label2):
 def calc_correction_factor(
     molecule_info, label=False,
 ):
-    """Calculate correction factor with metabolite composition defined by label.
+    """Calculate correction factor with molecule composition defined by label.
 
     Label supports only H02 (deuterium), C13, N15 and 'No label'.
     :param metabolite: str of metabolite name
