@@ -102,9 +102,7 @@ class MoleculeInfo:
 
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""
-        molecule_series = pd.Series(
-            self.get_molecule_formula(), dtype="int64",
-        )
+        molecule_series = pd.Series(self.get_molecule_formula(), dtype="int64",)
         result = molecule_series.rename(
             {
                 "H": "H01",
@@ -152,7 +150,9 @@ class MoleculeInfo:
         molecule_series = self.get_molecule_light_isotopes()
         light_isotopes = self.subtract_label(molecule_series, label)
         formula_isotopes = pd.concat([light_isotopes, label])
-        mass = self.isotopes.isotope_mass_series.multiply(formula_isotopes).dropna().sum()
+        mass = (
+            self.isotopes.isotope_mass_series.multiply(formula_isotopes).dropna().sum()
+        )
         return mass
 
 
