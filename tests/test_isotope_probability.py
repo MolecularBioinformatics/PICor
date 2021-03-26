@@ -208,51 +208,52 @@ class TestMoleculeInfo(unittest.TestCase):
 class TestCorrectionFactor(unittest.TestCase):
     """Calculation of correction factor."""
 
-    metabolites_file = Path("tests/test_metabolites.csv")
+    molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = ip.MoleculeInfo(
+        "Test1",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
 
     def test_result_no_label(self):
         """Result without label."""
-        res = ip.calc_correction_factor(
-            "Test1",
-            metabolites_file=self.metabolites_file,
-            isotopes_file=self.isotopes_file,
-        )
+        res = ip.calc_correction_factor(self.molecule_info)
         self.assertAlmostEqual(res, 1.33471643)
 
     def test_result_with_label(self):
         """Result with complex label."""
-        res = ip.calc_correction_factor("Test1", label="10C131N1512H02",)
+        res = ip.calc_correction_factor(self.molecule_info, label="10C131N1512H02",)
         self.assertAlmostEqual(res, 1.19257588)
 
     def test_result_wrong_label(self):
         """ValueError with impossible label."""
         with self.assertRaises(ValueError):
             ip.calc_correction_factor(
-                "Test1",
+                self.molecule_info,
                 label="100C131N15",
-                metabolites_file=self.metabolites_file,
-                isotopes_file=self.isotopes_file,
             )
 
 
 class TestTransitionProbability(unittest.TestCase):
     """Calculation of probability between to isotopologues."""
 
-    metabolites_file = Path("tests/test_metabolites.csv")
+    molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = ip.MoleculeInfo(
+        "Test4",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
 
     def test_result_labels_dict(self):
         """Result with label1 being smaller than label2 and both dict."""
         label1 = {"N15": 1}
         label2 = {"N15": 2, "C13": 2}
-        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ip.calc_transition_prob(
             label1,
             label2,
-            metabolite,
-            metabolites_file=self.metabolites_file,
-            isotopes_file=self.isotopes_file,
+            self.molecule_info,
         )
         self.assertAlmostEqual(res, 0.00026729)
 
@@ -260,26 +261,20 @@ class TestTransitionProbability(unittest.TestCase):
         """Result with label1 being smaller than label2."""
         label1 = "2N15"
         label2 = "2N152C13"
-        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ip.calc_transition_prob(
             label1,
             label2,
-            metabolite,
-            metabolites_file=self.metabolites_file,
-            isotopes_file=self.isotopes_file,
+            self.molecule_info,
         )
         self.assertAlmostEqual(res, 0.03685030)
 
     def test_result_label1_equal(self):
         """Result with label1 being equal to label2."""
         label1 = "1N15"
-        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ip.calc_transition_prob(
             label1,
             label1,
-            metabolite,
-            metabolites_file=self.metabolites_file,
-            isotopes_file=self.isotopes_file,
+            self.molecule_info,
         )
         self.assertEqual(res, 0)
 
@@ -287,13 +282,10 @@ class TestTransitionProbability(unittest.TestCase):
         """Result with label1 being larger than label2."""
         label1 = "2N152C13"
         label2 = "2N15"
-        metabolite = {"C": 30, "Si": 12, "H": 2, "N": 3}
         res = ip.calc_transition_prob(
             label1,
             label2,
-            metabolite,
-            metabolites_file=self.metabolites_file,
-            isotopes_file=self.isotopes_file,
+            self.molecule_info,
         )
         self.assertEqual(res, 0)
 
@@ -301,26 +293,26 @@ class TestTransitionProbability(unittest.TestCase):
         """Result with metabolite formula."""
         label1 = "1N15"
         label2 = "2N152C13"
-        metabolite = "Test1"
+        molecule_info = ip.MoleculeInfo(
+            "Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
         res = ip.calc_transition_prob(
             label1,
             label2,
-            metabolite,
-            metabolites_file=self.metabolites_file,
-            isotopes_file=self.isotopes_file,
+            molecule_info,
         )
         self.assertAlmostEqual(res, 0.00042029)
 
     def test_wrong_type(self):
-        """Type error with list as metabolite."""
+        """Type error with dict as metabolite."""
         label1 = "1N15"
         label2 = "2N152C13"
-        metabolite = ["C30", "Si12", "H2", "N3"]
+        molecule = {"C": 12, "N": 15}
         with self.assertRaises(TypeError):
             ip.calc_transition_prob(
                 label1,
                 label2,
-                metabolite,
-                metabolites_file=self.metabolites_file,
-                isotopes_file=self.isotopes_file,
+                molecule,
             )
