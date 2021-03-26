@@ -67,7 +67,7 @@ class MoleculeInfo:
         self.isotopes = IsotopeInfo(isotopes_file)
         self.molecules_file = molecules_file
         self.molecule_list = self.get_molecule_list(molecules_file)
-        self.formula = self.get_molecule_formula()
+        self.formula = self.get_formula()
 
     @staticmethod
     def get_molecule_list(molecules_file):
@@ -76,7 +76,7 @@ class MoleculeInfo:
         molecule_list.set_index("name", drop=True, inplace=True)
         return molecule_list
 
-    def get_molecule_formula(self):
+    def get_formula(self):
         """Get molecular formula from file.
 
         Parse and look up molecular formula of molecule and
@@ -101,7 +101,7 @@ class MoleculeInfo:
             raise ValueError("Unknown element in molecule")
         return n_atoms
     
-    def get_molecule_charge(self):
+    def get_charge(self):
         """Get charge of molecule."""
         charges = pd.read_csv(
             self.molecules_file,
@@ -118,7 +118,7 @@ class MoleculeInfo:
 
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""
-        molecule_series = pd.Series(self.get_molecule_formula(), dtype="int64",)
+        molecule_series = pd.Series(self.get_formula(), dtype="int64",)
         result = molecule_series.rename(
             {
                 "H": "H01",

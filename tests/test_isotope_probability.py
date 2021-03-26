@@ -189,7 +189,7 @@ class TestMoleculeInfo(unittest.TestCase):
         with self.assertRaises(KeyError):
             ip.MoleculeInfo("Unknown", self.molecules_file, self.isotopes_file)
 
-    def test_get_molecule_formula_invalid_element(self):
+    def test_get_formula_invalid_element(self):
         """Raise ValueError with invalid element in molecule formula."""
         with self.assertRaises(ValueError):
             ip.MoleculeInfo("Test3", self.molecules_file, self.isotopes_file)
@@ -227,14 +227,14 @@ class TestMoleculeInfo(unittest.TestCase):
     def test_get_charge_result(self):
         """Correct molecule charge."""
         molecule = ip.MoleculeInfo("Test1", self.molecules_file, self.isotopes_file,)
-        res = molecule.get_molecule_charge()
+        res = molecule.get_charge()
         self.assertEqual(res, 1)
 
     def test_get_charge_column_missing(self):
         """ValueError if value in 'charge' column is missing."""
         molecule = ip.MoleculeInfo("Test4", self.molecules_file2, self.isotopes_file,)
         with self.assertRaises(ValueError):
-            molecule.get_molecule_charge()
+            molecule.get_charge()
 
 
 

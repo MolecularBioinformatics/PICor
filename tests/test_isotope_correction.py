@@ -13,20 +13,20 @@ __license__ = "gpl3"
 
 
 class TestIsotopologueCorrection(unittest.TestCase):
-    """Total Correction Factor for metabolite and DataFrame."""
+    """Total Correction Factor for molecule and DataFrame."""
 
-    metabolites_file = Path("tests/test_metabolites.csv")
+    molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
 
     def test_result(self):
         """Result with default values."""
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
-        metabolite = "Test1"
+        molecule_name = "Test1"
         res = ic.calc_isotopologue_correction(
             data,
-            metabolite,
-            metabolites_file=self.metabolites_file,
+            molecule_name,
+            molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
         data_corrected = pd.read_csv(
@@ -38,12 +38,12 @@ class TestIsotopologueCorrection(unittest.TestCase):
         """Result with explicit subset."""
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         subset = ["No label", "1C13", "4C13 6H02 3N15"]
-        metabolite = "Test1"
+        molecule_name = "Test1"
         res = ic.calc_isotopologue_correction(
             data,
-            metabolite,
+            molecule_name,
             subset=subset,
-            metabolites_file=self.metabolites_file,
+            molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
         assert res.shape == data.shape
@@ -62,12 +62,12 @@ class TestIsotopologueCorrection(unittest.TestCase):
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
         data.rename(columns={"4C13 6H02 3N15": "2H02"}, inplace=True)
-        metabolite = "Test1"
+        molecule_name = "Test1"
         res = ic.calc_isotopologue_correction(
             data,
-            metabolite,
+            molecule_name,
             resolution_correction=True,
-            metabolites_file=self.metabolites_file,
+            molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
         data_corrected = pd.read_csv(
@@ -80,20 +80,20 @@ class TestIsotopologueCorrection(unittest.TestCase):
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
         data.rename(columns={"4C13 6H02 3N15": "2H02"}, inplace=True)
-        metabolite = "Test1"
+        molecule_name = "Test1"
         res_w_cor = ic.calc_isotopologue_correction(
             data,
-            metabolite,
+            molecule_name,
             resolution_correction=True,
             resolution=1e6,
-            metabolites_file=self.metabolites_file,
+            molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
         res_wo_cor = ic.calc_isotopologue_correction(
             data,
-            metabolite,
+            molecule_name,
             resolution_correction=False,
-            metabolites_file=self.metabolites_file,
+            molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
         pd.testing.assert_frame_equal(res_wo_cor, res_w_cor)
@@ -103,12 +103,12 @@ class TestIsotopologueCorrection(unittest.TestCase):
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
         data.rename(columns={"4C13 6H02 3N15": "1H02"}, inplace=True)
-        metabolite = "Test1"
+        molecule_name = "Test1"
         with self.assertWarns(UserWarning):
             ic.calc_isotopologue_correction(
                 data,
-                metabolite,
+                molecule_name,
                 resolution_correction=True,
-                metabolites_file=self.metabolites_file,
+                molecules_file=self.molecules_file,
                 isotopes_file=self.isotopes_file,
             )

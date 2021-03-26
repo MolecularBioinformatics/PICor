@@ -3,25 +3,25 @@
 Read raw data as csv or excel file and correct for natural abundance.
 
 Usage:
-    picor FILE METABOLITE [-o OUTFILE]
-                          [-s COL]...
-                          [-x EXCOL]...
-                          [--isotopes-file IFILE]
-                          [--metabolites-file MFILE]
-    picor FILE METABOLITE --res-correction
-                          [--mz-calibration MZ]
-                          [--isotopes-file IFILE]
-                          [-o OUTFILE]
-                          [-s COL]...
-                          [-x EXCOL]...
-                          [--resolution RES]
-                          [--metabolites-file MFILE]
+    picor FILE MOLECULE [-o OUTFILE]
+                        [-s COL]...
+                        [-x EXCOL]...
+                        [--isotopes-file IFILE]
+                        [--molecules-file MFILE]
+    picor FILE MOLECULE --res-correction
+                        [--mz-calibration MZ]
+                        [--isotopes-file IFILE]
+                        [-o OUTFILE]
+                        [-s COL]...
+                        [-x EXCOL]...
+                        [--resolution RES]
+                        [--molecules-file MFILE]
     picor (-h | --help)
     picor --version
 
 Arguments:
-    FILE        Path to excel or csv file (xlsx or csv)
-    METABOLITE  Name as in metabolites-file
+    FILE       Path to excel or csv file (xlsx or csv)
+    MOLECULE   Name as in molecules-file
 
 Options:
   -o --output OUTFILE       Output file path (csv format)
@@ -30,7 +30,7 @@ Options:
   --mz-calibration MZ       Mass-charge of calibration point [default: 200]
   -s --subset COL           Column for calculation; can be used multiple times
   -x --exclude-col EXCOL    Column to ignore; can be used multiple times
-  --metabolites-file MFILE  Path to tab-separated metabolites file
+  --molecules-file MFILE    Path to tab-separated molecules file
                             Name, formula and charge as rows; e.g. Suc C4H4O3 -1
   --isotopes-file IFILE     Path to tab-separated isotope file
                             Element, mass, abundance and isotope as rows
@@ -68,14 +68,14 @@ def cli(arguments):
         raise ValueError("FILE can be either '.csv' or '.xlsx' file type")
     corr_data = picor.calc_isotopologue_correction(
         raw_data,
-        arguments["METABOLITE"],
+        arguments["MOLECULE"],
         subset=arguments["--subset"],
         exclude_col=arguments["--exclude-col"],
         resolution_correction=arguments["--res-correction"],
         mz_calibration=float(arguments["--mz-calibration"]),
         resolution=float(arguments["--resolution"]),
         isotopes_file=arguments["--isotopes-file"],
-        metabolites_file=arguments["--metabolites-file"],
+        molecules_file=arguments["--molecules-file"],
     )
     if outfile:
         corr_data.to_csv(outfile)
