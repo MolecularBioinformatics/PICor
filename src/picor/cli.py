@@ -41,8 +41,8 @@ Options:
 """
 import logging
 from pathlib import Path
-import pkg_resources
 import sys
+import pkg_resources
 
 from docopt import docopt
 import pandas as pd
