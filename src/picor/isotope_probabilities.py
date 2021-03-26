@@ -85,6 +85,7 @@ class IsotopeInfo:
 
 class MoleculeInfo:
     """Class containing molecule data."""
+
     def __init__(self, molecule_name, molecules_file, isotopes_file):
         """Class contains molecule name, formula and isotope data.
 

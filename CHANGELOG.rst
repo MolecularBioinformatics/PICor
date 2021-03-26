@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.5.0
+=============
+
+- Refactor code: Introducing MoleculeInfo class
+
 Version 0.4.1
 =============
 
