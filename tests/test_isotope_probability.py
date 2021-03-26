@@ -3,6 +3,7 @@
 from pathlib import Path
 import unittest
 
+import pandas
 import picor.isotope_probabilities as ip
 
 
@@ -76,40 +77,6 @@ class TestLabels(unittest.TestCase):
         with self.assertRaises(ValueError):
             ip.parse_label(data)
 
-    def test_get_metabolite_formula_result(self):
-        """Return valid formula."""
-        res = ip.get_metabolite_formula(
-            "Test1", self.metabolites_file, self.isotopes_file
-        )
-        self.assertDictEqual(res, {"C": 21, "H": 28, "N": 7, "O": 14, "P": 2})
-
-    def test_get_metabolite_formula_unknown(self):
-        """Raise KeyError with undefined metabolite."""
-        with self.assertRaises(KeyError):
-            ip.get_metabolite_formula(
-                "UnKnown", self.metabolites_file, self.isotopes_file
-            )
-
-    def test_get_metabolite_formula_invalid_element(self):
-        """Raise ValueError with invalid element in metabolite formula."""
-        with self.assertRaises(ValueError):
-            ip.get_metabolite_formula(
-                "Test3", self.metabolites_file, self.isotopes_file
-            )
-
-    def test_isotope_to_element_result(self):
-        """Return correct elements."""
-        label = {"N15": 2, "C13": 3, "H02": 1}
-        res_corr = {"N": 2, "C": 3, "H": 1}
-        res = ip.isotope_to_element(label)
-        self.assertEqual(res, res_corr)
-
-    def test_isotope_to_element_bad_element(self):
-        """Raise ValueError for undefined element in isotope label."""
-        label = {"O18": 2, "C13": 3, "H02": 1}
-        with self.assertRaises(ValueError):
-            ip.isotope_to_element(label)
-
     def test_sort_list(self):
         """Sort_labels gives correct order with list of strings."""
         data = ["4C13", "3C13", "N154C13", "No label"]
@@ -143,6 +110,99 @@ class TestLabels(unittest.TestCase):
         label2 = "11N15"  # Mass shift of 5
         res = ip.label_shift_smaller(label1, label2)
         self.assertFalse(res)
+
+    def test_isotope_to_element_result(self):
+        """Return correct elements."""
+        label = {"N15": 2, "C13": 3, "H02": 1}
+        res_corr = {"N": 2, "C": 3, "H": 1}
+        res = ip.isotope_to_element(label)
+        self.assertEqual(res, res_corr)
+
+    def test_isotope_to_element_bad_element(self):
+        """Raise ValueError for undefined element in isotope label."""
+        label = {"O18": 2, "C13": 3, "H02": 1}
+        with self.assertRaises(ValueError):
+            ip.isotope_to_element(label)
+
+class TestIsotopeInfo(unittest.TestCase):
+    """Isotope file parsing."""
+
+    isotopes_file = Path("tests/test_isotopes.csv")
+
+    def test_init_attributes_type(self):
+        """Type of instance attributes."""
+        instance = ip.IsotopeInfo(self.isotopes_file)
+        self.assertIsInstance(instance.abundance, dict)
+        self.assertIsInstance(instance.isotopes_file, Path)
+        self.assertIsInstance(instance.isotope_mass_series, pandas.Series)
+
+    def test_get_isotope_abundance_result(self):
+        """Return correct data."""
+        res = ip.IsotopeInfo.get_isotope_abundance(self.isotopes_file)
+        self.assertListEqual(
+            ['H', 'C', 'N', 'O', 'Si', 'P', 'S'],
+            list(res.keys()),
+        )
+        self.assertListEqual(
+            res["C"], [0.9893, 0.0107]
+        )
+
+    def test_get_isotope_mass_series_keys(self):
+        """Return correct Series keys."""
+        res = ip.IsotopeInfo.get_isotope_mass_series(self.isotopes_file)
+        self.assertListEqual(
+            ['H01', 'H02', 'C12'],
+            list(res.keys())[:3],
+        )
+
+    def test_get_isotope_mass_series_fields(self):
+        """Return correct data."""
+        res = ip.IsotopeInfo.get_isotope_mass_series(self.isotopes_file)
+        self.assertEqual(13.003354835, res["C13"])
+
+    def test_get_isotope_mass_series_names(self):
+        """Return correct index and data names."""
+        res = ip.IsotopeInfo.get_isotope_mass_series(self.isotopes_file)
+        self.assertEqual("isotope", res.keys().name)
+        self.assertEqual("mass", res.name)
+
+
+class TestMoleculeInfo(unittest.TestCase):
+    """Label and formula parsing."""
+
+    metabolites_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
+
+    def test_init_attributes_type(self):
+        """Type of instance attributes."""
+        ins = ip.MoleculeInfo(
+            "Test1", self.metabolites_file, self.isotopes_file
+        )
+        self.assertIsInstance(ins.molecule_name, str)
+        self.assertIsInstance(ins.isotopes, ip.IsotopeInfo)
+        self.assertIsInstance(ins.molecule_list, pandas.DataFrame)
+        self.assertIsInstance(ins.formula, dict)
+
+    def test_init_formula_result(self):
+        """Return right fields"""
+        ins = ip.MoleculeInfo(
+            "Test1", self.metabolites_file, self.isotopes_file
+        )
+        self.assertDictEqual(ins.formula, {"C": 21, "H": 28, "N": 7, "O": 14, "P": 2})
+
+    def test_molecule_name_unknown(self):
+        """Raise KeyError with undefined molecule name."""
+        with self.assertRaises(KeyError):
+            ip.MoleculeInfo(
+                "Unknown", self.metabolites_file, self.isotopes_file
+            )
+
+    def test_get_metabolite_formula_invalid_element(self):
+        """Raise ValueError with invalid element in molecule formula."""
+        with self.assertRaises(ValueError):
+            ip.MoleculeInfo(
+                "Test3", self.metabolites_file, self.isotopes_file
+            )
 
 
 class TestCorrectionFactor(unittest.TestCase):
