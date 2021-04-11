@@ -448,8 +448,8 @@ def calc_transition_prob(label1, label2, molecule_info):
     if not isinstance(molecule_info, MoleculeInfo):
         raise TypeError("molecule_info must be instance of MoleculeInfo class")
     n_atoms = molecule_info.formula
-    label1 = pd.Series(label1)
-    label2 = pd.Series(label2)
+    label1 = pd.Series(label1, dtype="int64")
+    label2 = pd.Series(label2, dtype="int64")
     difference_labels = label2.sub(label1, fill_value=0)
     difference_labels.index = difference_labels.index.str[:-2]
     label1.index = label1.index.str[:-2]

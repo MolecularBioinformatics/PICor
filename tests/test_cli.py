@@ -1,6 +1,7 @@
 """Unit tests for isotope correction."""
 
 import subprocess
+from subprocess import PIPE
 
 
 import pandas as pd
@@ -41,7 +42,7 @@ def test_no_output(tmp_path):
     cmd = (
         f"picor tests/test_dataset.csv NAD -x 'dummy column int' -x 'dummy column str'"
     )
-    process = subprocess.run(cmd, shell=True, capture_output=True)
+    process = subprocess.run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     assert process.returncode == 0
     assert not process.stderr, "No output to stderr"
     assert len(process.stdout) > 0, "Results printed to stdout"
@@ -52,6 +53,6 @@ def test_wrong_filetype(tmp_path):
     cmd = (
         f"picor tests/test_dataset.tsv NAD -x 'dummy column int' -x 'dummy column str'"
     )
-    process = subprocess.run(cmd, capture_output=True, shell=True)
+    process = subprocess.run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     assert process.returncode == 1
     assert "ValueError" in str(process.stderr)

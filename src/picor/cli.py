@@ -61,7 +61,7 @@ def cli(arguments):
     infile = Path(arguments["FILE"])
     outfile = arguments["--output"]
     if infile.suffix == ".xlsx":
-        raw_data = pd.read_excel(infile, index_col=0)
+        raw_data = pd.read_excel(infile, index_col=0, engine="openpyxl")
     elif infile.suffix == ".csv":
         raw_data = pd.read_csv(infile, index_col=0)
     else:
@@ -86,7 +86,7 @@ def main():
     """Serve as entry point for CLI."""
     version = pkg_resources.get_distribution("picor").version
     arguments = docopt(__doc__, version=version)
-    _logger.info(f"{arguments=}")
+    _logger.info("arguments = {arguments}")
     sys.exit(cli(arguments))
 
 
