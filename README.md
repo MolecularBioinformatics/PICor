@@ -17,7 +17,7 @@ To install:
 $ pip install picor
 ```
 
-You need to have `docopt`, `pandas` and `scipy` installed.
+PICor depends on `docopt`, `pandas`, `openpyxl` and `scipy` and installs those with pip if not available.
 
 ## Usage
 
@@ -33,6 +33,8 @@ picor tests/test_dataset.xlsx NAD -x "dummy column int" -x "dummy column str"
 
 Files with `.csv` or `.xlsx` suffix can be used as input files.
 You can choose the output file (in csv format) with the `-o` option.
+If no output file is given, output will be printed to stdout.
+
 `picor -h` shows all options.
 
 ### Python Module
@@ -64,4 +66,33 @@ In case the DataFrame contains columns (except the index colum) with other data 
 You can activate a resolution depent correction by setting  `resolution_correction` to `True`. Specify the resolution and the reference m/z ratio with `resolution` and `mz_calibration`.
 
 
-Jørn Dietze, UiT The Arctic University of Norway, 2020
+## Input Data
+Using the command line interface `picor` both excel (`.xlsx`) and comma-separated data (`.csv`) can be corrected.
+
+Both data formats should be arranged with the different samples as rows and different labels/isotopologues as columns.
+Additional columns with for example more information about the samples have to be added to the excluded columns. Either with `-x` (command line) or `exclude_col` parameter as a list (python interface).
+
+### Example Data
+
+| sample number | No label | 1C13 | 4C13 6H02 3N15 | sample condition |
+|:------------- | -------- | ---- | -------------- | ---------------- |
+| 0             | 100      | 100  | 30             | C                |
+| 1             | 200      | 100  | 40             | ER               |
+| 2             | 300      | 100  | 50             | C                |
+| 3             | 400      | 100  | 60             | ER               |
+| 4             | 500      | 100  | 70             | C                |
+| 5             | 600      | 100  | 80             | ER               |
+
+
+### Label Specification
+
+The isotopologues or labels are specified as string in the table header (first line).
+Labels can include either one or multiple isotopes or 'No label'.
+Currently supported are 'H02' (deuterium), 'C13' and 'N15'.
+The number of labeled atoms of each isotope has to be specified before the element, e.g. '3H02 2C13' for three deuterium and two 13-C atoms.
+Spaces and underscores are allowed but not necessary in the label definition.
+
+In case you want to add additional information you can a prefix separated by a colon (':'), e.g. "NAD:2C13". The prefix will be ignored. 
+
+
+Jørn Dietze, UiT -The Arctic University of Norway, 2021
