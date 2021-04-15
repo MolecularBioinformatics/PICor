@@ -18,14 +18,16 @@ _logger = logging.getLogger(__name__)
 
 def calc_isotopologue_correction(
     raw_data,
-    molecule_name,
+    molecule_name=None,
+    molecules_file=None,
+    molecule_formula=None,
+    molecule_charge=None,
     subset=False,
     exclude_col=False,
     resolution_correction=False,
     mz_calibration=200,
     resolution=60000,
     isotopes_file=None,
-    molecules_file=None,
 ):
     """Calculate isotopologue correction factor for molecule.
 
@@ -38,7 +40,16 @@ def calc_isotopologue_correction(
     raw_data : pandas.DataFrame
         DataFrame of integrated lowest peaks per species vs time
     molecule_name : str
-        molecule name as in molecules_file
+        Molecule name as in molecules_file.
+    molecules_file : str or Path
+        tab-separated file with name, formula and charge as rows
+        e.g. Suc C4H4O3 -1
+    molecule_formula : str
+        Chemical formula as string.
+        No spaces or underscores allowed.
+        E.g. "C3H7O1"
+    molecule_charge : int
+        Charge as signed integer
     subset : list of str or False, optional
         List of column names to use for calculation
     exclude_col : list of str, optional
@@ -53,9 +64,6 @@ def calc_isotopologue_correction(
     isotopes_file : Path or str, optional
         tab-separated file with element, mass, abundance and isotope as rows
         e.g. H 1.008 0.99 H01
-    molecules_file : Path or str, optional
-        tab-separated file with name, formula and charge as rows
-        e.g. Suc C4H4O3 -1
 
     Returns
     -------
@@ -77,7 +85,9 @@ def calc_isotopologue_correction(
             subset = list(set(subset) - set(exclude_col))
     subset = ip.sort_labels(subset)
 
-    molecule_info = ip.MoleculeInfo(molecule_name, molecules_file, isotopes_file)
+    molecule_info = ip.MoleculeInfo.get_molecule_info(
+        molecule_name, molecules_file, molecule_formula, molecule_charge, isotopes_file
+    )
     if resolution_correction:
         mass = molecule_info.calc_isotopologue_mass("No label",)
         charge = molecule_info.get_charge()

@@ -86,8 +86,36 @@ class IsotopeInfo:
 class MoleculeInfo:
     """Class containing molecule data."""
 
-    def __init__(self, molecule_name, molecules_file, isotopes_file):
-        """Class contains molecule name, formula and isotope data.
+    def __init__(self, formula, charge, isotopes):
+        """Class contains molecule formula, charge and isotope data.
+
+        Parameters
+        ----------
+        formula : dict
+            Elements as keys
+            Number of atoms as values
+            E.g. {"C":3, "H":8}
+        charge : int
+            Charge as signed integer
+        isotopes : IsotopeInfo
+            Contains isotope data.
+        """
+        self.isotopes = isotopes
+        self.formula = formula
+        self.charge = charge
+
+    @classmethod
+    def get_molecule_info(
+        cls,
+        molecule_name=None,
+        molecules_file=None,
+        molecule_formula=None,
+        molecule_charge=None,
+        isotopes_file=None,
+    ):
+        """Get MoleculeInfo instance from either formula or name.
+
+        Either name and molecules file or formula and charge are reqired.
 
         Parameters
         ----------
@@ -96,15 +124,55 @@ class MoleculeInfo:
         molecules_file : str or Path
             tab-separated file with name, formula and charge as rows
             e.g. Suc C4H4O3 -1
+        molecule_formula : str
+            Chemical formula as string.
+            No spaces or underscores allowed.
+            E.g. "C3H7O1"
+        molecule_charge : int
+            Charge as signed integer
         isotopes_file : str or Path
             File path to isotopes file
             comma separated csv with element and abundance columns
+
+        Raises
+        ------
+        ValueError
+            If both molecule_name and molecule_formula are specified.
+
+        Returns
+        -------
+        MoleculeInfo
+            Instance of class with formula, cahrge and isotope data.
         """
-        self.molecule_name = molecule_name
-        self.isotopes = IsotopeInfo(isotopes_file)
-        self.molecules_file = molecules_file
-        self.molecule_list = self.get_molecule_list(molecules_file)
-        self.formula = self.get_formula()
+        if molecule_name and molecules_file and not molecule_formula:
+            molecule = cls.create_from_name(
+                molecule_name, molecules_file, isotopes_file
+            )
+        elif molecule_formula and molecule_charge and not molecule_name:
+            molecule = cls.create_from_formula(
+                molecule_formula, molecule_charge, isotopes_file
+            )
+        else:
+            raise ValueError(
+                "Either molecule name and file or molecule formula and charge have to be specified"
+            )
+        return molecule
+
+    @classmethod
+    def create_from_name(cls, molecule_name, molecules_file, isotopes_file):
+        """Get MoleculeInfo instance from molecule name and file."""
+        isotopes = IsotopeInfo(isotopes_file)
+        molecule_list = cls.get_molecule_list(molecules_file)
+        molecule_formula = cls.get_formula(molecule_name, molecule_list, isotopes)
+        molecule_charge = cls.get_charge(molecule_name, molecules_file)
+        return cls(molecule_formula, molecule_charge, isotopes)
+
+    @classmethod
+    def create_from_formula(cls, molecule_formula, molecule_charge, isotopes_file):
+        """Get MoleculeInfo instance from formula and charge."""
+        isotopes = IsotopeInfo(isotopes_file)
+        formula = parse_formula(molecule_formula)
+        return cls(formula, molecule_charge, isotopes)
 
     @staticmethod
     def get_molecule_list(molecules_file):
@@ -114,7 +182,8 @@ class MoleculeInfo:
         molecule_list.set_index("name", drop=True, inplace=True)
         return molecule_list
 
-    def get_formula(self):
+    @staticmethod
+    def get_formula(molecule_name, molecule_list, isotopes):
         """Return molecular formula.
 
         Parse and look up molecular formula of molecule and
@@ -134,19 +203,20 @@ class MoleculeInfo:
             If unknown element in molecule formula.
         """
         try:
-            n_atoms = self.molecule_list.loc[self.molecule_name].formula
+            n_atoms = molecule_list.loc[molecule_name].formula
         except KeyError as error:
             raise KeyError(
                 f"Molecule {error} couldn't be found in molecules file"
             ) from error
-        if not all(element in self.isotopes.abundance for element in n_atoms):
+        if not all(element in isotopes.abundance for element in n_atoms):
             raise ValueError("Unknown element in molecule")
         return n_atoms
 
-    def get_charge(self):
+    @staticmethod
+    def get_charge(molecule_name, molecules_file):
         """Get charge of molecule."""
         charges = pd.read_csv(
-            self.molecules_file,
+            molecules_file,
             sep="\t",
             usecols=["name", "charge"],
             index_col="name",
@@ -156,13 +226,13 @@ class MoleculeInfo:
             charges = charges.astype(int)
         except ValueError as exc:
             raise ValueError(
-                "Charge of at least one molecule missing in molecules_file"
+                "Charge of at least one molecule missing in molecules_file or missformed file"
             ) from exc
-        return charges[self.molecule_name]
+        return charges[molecule_name]
 
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""
-        molecule_series = pd.Series(self.get_formula(), dtype="int64",)
+        molecule_series = pd.Series(self.formula, dtype="int64",)
         result = molecule_series.rename(
             {
                 "H": "H01",
