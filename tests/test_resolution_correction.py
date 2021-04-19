@@ -19,8 +19,8 @@ class TestMassCalculations(unittest.TestCase):
 
     molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
-    molecule_info = MoleculeInfo(
-        "Test1", molecules_file=molecules_file, isotopes_file=isotopes_file,
+    molecule_info = MoleculeInfo.get_molecule_info(
+        molecule_name="Test1", molecules_file=molecules_file, isotopes_file=isotopes_file,
     )
 
     def test_calc_min_mass_diff_result(self):
@@ -70,8 +70,8 @@ class TestOverlapWarnings(unittest.TestCase):
 
     molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
-    molecule_info = MoleculeInfo(
-        "Test1", molecules_file=molecules_file, isotopes_file=isotopes_file,
+    molecule_info = MoleculeInfo.get_molecule_info(
+        molecule_name="Test1", molecules_file=molecules_file, isotopes_file=isotopes_file,
     )
 
     def test_direct_overlap_warn(self):

@@ -55,10 +55,6 @@ class TestIsotopologueCorrection(unittest.TestCase):
 
     def test_resolution_result(self):
         """Result with default values"""
-        import os
-
-        print(os.getcwd())
-        print(os.listdir())
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
         data.rename(columns={"4C13 6H02 3N15": "2H02"}, inplace=True)

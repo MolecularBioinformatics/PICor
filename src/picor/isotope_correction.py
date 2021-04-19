@@ -90,7 +90,7 @@ def calc_isotopologue_correction(
     )
     if resolution_correction:
         mass = molecule_info.calc_isotopologue_mass("No label",)
-        charge = molecule_info.get_charge()
+        charge = molecule_info.charge
         min_mass_diff = rc.calc_min_mass_diff(mass, charge, mz_calibration, resolution)
         rc.warn_direct_overlap(
             subset, molecule_info, min_mass_diff,
