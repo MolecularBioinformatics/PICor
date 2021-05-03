@@ -102,7 +102,7 @@ class MoleculeInfo:
         """
         self.isotopes = isotopes
         self.formula = formula
-        self.charge = charge
+        self.charge = int(charge)
 
     @classmethod
     def get_molecule_info(
