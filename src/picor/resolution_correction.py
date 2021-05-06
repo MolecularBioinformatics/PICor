@@ -98,9 +98,9 @@ def warn_indirect_overlap(
 def calc_indirect_overlap_prob(
     label1, label2, molecule_info, min_mass_diff,
 ):
-    """Calculate probability for overlap caused by random H02 and C13 incoporation.
+    """Calculate probability for overlap caused by random H02, C13 and O18 incoporation.
 
-    Only C13 and H02 attributions are considered so far.
+    Only O18, C13 and H02 attributions are considered so far.
 
     Parameters
     ----------
@@ -132,17 +132,33 @@ def calc_indirect_overlap_prob(
     if label_diff.ge(0).all():
         return 0
 
-    probs = {}
-    for n_c in range(0, coarse_mass_difference + 1):
-        # breakpoint()
-        n_h = coarse_mass_difference - n_c
-        label_trans = {"C13": n_c, "H02": n_h}
+    probs = []
+    contains_o = "O" in molecule_info.formula
+    for (n_h, n_c, n_o) in generate_labels(coarse_mass_difference, contains_o):
+        label_trans = {"H02": n_h, "C13": n_c}
+        if contains_o:
+            label_trans["O18"] = n_o
         label_trans_series = pd.Series(label_trans, dtype="float64")
         label1_mod = dict(label1_series.add(label_trans_series, fill_value=0))
         if is_isotologue_overlap(label1_mod, label2, molecule_info, min_mass_diff,):
-            probs[n_c] = calc_label_diff_prob(label1, label_trans, molecule_info)
-    prob_total = sum(probs.values())
+            print(label_trans)
+            probs.append(calc_label_diff_prob(label1, label_trans, molecule_info))
+    prob_total = sum(probs)
     return prob_total
+
+
+def sum_coarse_mass(n_h, n_c, n_o):
+    """Return coarse sum of label composed of H02, C13 and O18."""
+    return n_h + n_c + 2 * n_o
+
+
+def generate_labels(mass_diff, contains_o):
+    """Return combiantions of H02, C13 and O18 for given mass diff."""
+    for label in itertools.product(range(0, mass_diff + 1), repeat=3):
+        if not contains_o and label[2] != 0:
+            continue
+        if sum_coarse_mass(*label) == mass_diff:
+            yield label
 
 
 def warn_direct_overlap(

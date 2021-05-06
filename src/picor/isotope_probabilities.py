@@ -250,7 +250,7 @@ class MoleculeInfo:
     def subtract_label(molecule_series, label_series):
         """Subtract label atoms from molecule formula."""
         formula_difference = molecule_series.copy()
-        iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14"}
+        iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14", "O18": "O16"}
         for heavy in label_series.keys():
             light = iso_dict[heavy]
             formula_difference[light] = molecule_series[light] - label_series[heavy]
