@@ -1,0 +1,7 @@
+index column,No label,1C13,2H02,dummy column int,dummy column str
+0,100,100,30,1,C
+1,200,100,40,2,ER
+2,300,100,50,3,C
+3,400,100,60,4,ER
+4,500,100,70,5,C
+5,600,100,80,6,ER
