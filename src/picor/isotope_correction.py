@@ -78,9 +78,8 @@ def calc_isotopologue_correction(
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
         molecules_file = os.path.join(dir_path, "metabolites.csv")
-    data = raw_data.copy(deep=True)
     if not subset:
-        subset = data.columns
+        subset = raw_data.columns
         if exclude_col:
             subset = list(set(subset) - set(exclude_col))
     subset = ip.sort_labels(subset)
@@ -88,14 +87,27 @@ def calc_isotopologue_correction(
     molecule_info = ip.MoleculeInfo.get_molecule_info(
         molecule_name, molecules_file, molecule_formula, molecule_charge, isotopes_file
     )
+    min_mass_diff = rc.calc_min_mass_diff(
+        molecule_info.calc_isotopologue_mass("No label",),
+        molecule_info.charge,
+        mz_calibration,
+        resolution,
+    )
     if resolution_correction:
-        mass = molecule_info.calc_isotopologue_mass("No label",)
-        charge = molecule_info.charge
-        min_mass_diff = rc.calc_min_mass_diff(mass, charge, mz_calibration, resolution)
         rc.warn_direct_overlap(
             subset, molecule_info, min_mass_diff,
         )
+    data = correct_data(
+        raw_data, subset, molecule_info, resolution_correction, min_mass_diff
+    )
+    return data
 
+
+def correct_data(
+    uncorrected_data, subset, molecule_info, resolution_correction, min_mass_diff
+):
+    """Correct data based on labels in subset."""
+    data = uncorrected_data.copy()
     for label1 in subset:
         corr = ip.calc_correction_factor(molecule_info, label1,)
         assert corr >= 1, "Correction factor should be greater or equal 1"
