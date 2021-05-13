@@ -3,8 +3,8 @@
 Functions:
     calc_isotopologue_correction: Correct DataFrame with measurements.
 """
-import os
 import logging
+from pathlib import Path
 
 import picor.isotope_probabilities as ip
 import picor.resolution_correction as rc
@@ -70,11 +70,11 @@ def calc_isotopologue_correction(
     pandas.DataFrame
         Corrected data
     """
-    dir_path = os.path.dirname(os.path.abspath(__file__))
+    dir_path = Path(__file__).parent
     if not isotopes_file:
-        isotopes_file = os.path.join(dir_path, "isotopes.csv")
+        isotopes_file = dir_path / "isotopes.csv"
     if not molecules_file:
-        molecules_file = os.path.join(dir_path, "metabolites.csv")
+        molecules_file = dir_path / "metabolites.csv"
     if not subset:
         subset = raw_data.columns
         if exclude_col:
