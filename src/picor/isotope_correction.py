@@ -70,13 +70,10 @@ def calc_isotopologue_correction(
     pandas.DataFrame
         Corrected data
     """
+    dir_path = os.path.dirname(os.path.abspath(__file__))
     if not isotopes_file:
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
         isotopes_file = os.path.join(dir_path, "isotopes.csv")
     if not molecules_file:
-        path = os.path.abspath(__file__)
-        dir_path = os.path.dirname(path)
         molecules_file = os.path.join(dir_path, "metabolites.csv")
     if not subset:
         subset = raw_data.columns
