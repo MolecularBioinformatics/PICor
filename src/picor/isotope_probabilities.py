@@ -517,7 +517,6 @@ def calc_transition_prob(label1, label2, molecule_info):
 
     if not isinstance(molecule_info, MoleculeInfo):
         raise TypeError("molecule_info must be instance of MoleculeInfo class")
-    n_atoms = molecule_info.formula
     label1 = pd.Series(label1, dtype="int64")
     label2 = pd.Series(label2, dtype="int64")
     difference_labels = label2.sub(label1, fill_value=0)
@@ -528,14 +527,37 @@ def calc_transition_prob(label1, label2, molecule_info):
     if difference_labels.lt(0).any():
         return 0
 
+    return calc_label_diff_prob(label1, difference_labels, molecule_info)
+
+
+def calc_label_diff_prob(label1, difference_labels, molecule_info):
+    """Calculate the transition probablity of difference in labelled atoms.
+
+    Parameters
+    ----------
+    label1 : dict
+        Isotope symbol (e.g. N15) as key and number of atoms as value
+    difference_labels : dict
+        Isotope symbol (e.g. N15) as key and number of atoms as value
+    molecule_info : MoleculeInfo
+        Instance with molecule and isotope information.
+    Returns
+    -------
+    float
+        Transition probability
+    """
+    n_atoms = molecule_info.formula
+    abundance = molecule_info.isotopes.abundance
+
     prob = []
-    for elem in difference_labels.index:
-        n_elem_1 = label1.get(elem, 0)
-        n_elem_2 = label2.get(elem, 0)
-        n_unlab = n_atoms[elem] - n_elem_2
-        n_label = difference_labels[elem]
-        abun_unlab = molecule_info.isotopes.abundance[elem][0]
-        abun_lab = molecule_info.isotopes.abundance[elem][1]
+    for isotope, n_label in difference_labels.items():
+        # get number of atoms of isotope, default to 0
+        n_elem_1 = label1.get(isotope, 0)
+        elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
+
+        n_unlab = n_atoms[elem] - n_elem_1 - n_label
+        abun_unlab = abundance[elem][0]
+        abun_lab = abundance[elem][1]
         if n_label == 0:
             continue
 

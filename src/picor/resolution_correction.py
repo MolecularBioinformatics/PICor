@@ -5,16 +5,12 @@ Functions:
     warn_direct_overlap: warn if direct overlap due to resolution
     warn_indirect_overlap: warn if overlap due to H02 or C13 incorporation
 """
-from functools import reduce
 import itertools
-from operator import mul
-import re
 import warnings
 
 import pandas as pd
-from scipy.special import binom
 
-from picor.isotope_probabilities import parse_label
+from picor.isotope_probabilities import parse_label, calc_label_diff_prob
 
 __author__ = "Jørn Dietze"
 __copyright__ = "Jørn Dietze"
@@ -169,45 +165,3 @@ def warn_direct_overlap(
         # Direct label overlap
         if is_isotologue_overlap(label1, label2, molecule_info, min_mass_diff,):
             warnings.warn(f"Direct overlap of {label1} and {label2}")
-
-
-def calc_label_diff_prob(label1, difference_labels, molecule_info):
-    """Calculate the transition probablity of difference in labelled atoms.
-
-    Parameters
-    ----------
-    label1 : dict
-        Isotope symbol (e.g. N15) as key and number of atoms as value
-    difference_labels : dict
-        Isotope symbol (e.g. N15) as key and number of atoms as value
-    molecule_info : MoleculeInfo
-        Instance with molecule and isotope information.
-    Returns
-    -------
-    float
-        Transition probability
-    """
-    n_atoms = molecule_info.formula
-    abundance = molecule_info.isotopes.abundance
-
-    prob = []
-    for isotope, n_label in difference_labels.items():
-        # get number of atoms of isotope, default to 0
-        n_elem_1 = label1.get(isotope, 0)
-        elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
-
-        n_unlab = n_atoms[elem] - n_elem_1 - n_label
-        abun_unlab = abundance[elem][0]
-        abun_lab = abundance[elem][1]
-        if n_label == 0:
-            continue
-
-        trans_pr = binom((n_atoms[elem] - n_elem_1), n_label)
-        trans_pr *= abun_lab ** n_label
-        trans_pr *= abun_unlab ** n_unlab
-        prob.append(trans_pr)
-
-    # Prob is product of single probabilities
-    prob_total = reduce(mul, prob)
-    assert prob_total <= 1, "Transition probability greater than 1"
-    return prob_total
