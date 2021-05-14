@@ -10,7 +10,7 @@ import warnings
 
 import pandas as pd
 
-from picor.isotope_probabilities import parse_label, calc_label_diff_prob
+from picor.isotope_probabilities import calc_label_diff_prob, Label
 
 __author__ = "Jørn Dietze"
 __copyright__ = "Jørn Dietze"
@@ -60,10 +60,27 @@ def calc_coarse_mass_difference(label1, label2):
     """Calculate difference in nucleons (e.g. 2 between H20 and D20).
 
     nucleons(label2) - nucleons(label1)
+
+    Parameters
+    ----------
+    label1 : Label
+        Label of isotopologue 1
+    label2 : Label
+        Label of isotopologue 2
+
+    Returns
+    -------
+    float
+        Coarse difference
+
+    Raises
+    ------
+    TypeError
+        If label1 or label2 is not Label instance
     """
-    label1 = parse_label(label1)
-    label2 = parse_label(label2)
-    return sum(label2.values()) - sum(label1.values())
+    if not isinstance(label1, Label) or not isinstance(label2, Label):
+        raise TypeError("label1 and label2 have to be Label instances")
+    return label2.mass - label1.mass
 
 
 def is_isotologue_overlap(
@@ -118,13 +135,9 @@ def calc_indirect_overlap_prob(
     coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
     if coarse_mass_difference <= 0:
         return 0
-    label1 = parse_label(label1)
-    label2 = parse_label(label2)
-    label1_series = pd.Series(label1, dtype="float64")
-    label2_series = pd.Series(label2, dtype="float64")
 
     # Check if standard transition is possible
-    label_diff = label2_series.sub(label1_series, fill_value=0)
+    label_diff = label1.get_diff_label_series(label2)
     if label_diff.ge(0).all():
         return 0
 
@@ -135,7 +148,7 @@ def calc_indirect_overlap_prob(
         if contains_o:
             label_trans["O18"] = n_o
         label_trans_series = pd.Series(label_trans, dtype="float64")
-        label1_mod = dict(label1_series.add(label_trans_series, fill_value=0))
+        label1_mod = dict(label1.as_series.add(label_trans_series, fill_value=0))
         if is_isotologue_overlap(label1_mod, label2, molecule_info, min_mass_diff,):
             print(label_trans)
             probs.append(calc_label_diff_prob(label1, label_trans, molecule_info))

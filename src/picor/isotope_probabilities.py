@@ -247,13 +247,13 @@ class MoleculeInfo:
         return result
 
     @staticmethod
-    def subtract_label(molecule_series, label_series):
+    def subtract_label(molecule_series, label):
         """Subtract label atoms from molecule formula."""
         formula_difference = molecule_series.copy()
         iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14", "O18": "O16"}
-        for heavy in label_series.keys():
+        for heavy in label.as_series.keys():
             light = iso_dict[heavy]
-            formula_difference[light] = molecule_series[light] - label_series[heavy]
+            formula_difference[light] = molecule_series[light] - label.as_series[heavy]
             if any(formula_difference < 0):
                 raise ValueError("Too many labelled atoms")
         return formula_difference
@@ -267,8 +267,8 @@ class MoleculeInfo:
 
         Parameters
         ----------
-        label : str or dict
-            "No label" or formula, can contain whitespaces
+        label : Label
+            Instance of Label
 
         Returns
         -------
@@ -280,20 +280,94 @@ class MoleculeInfo:
         ValueError
             If label is neither str nor dict.
         """
-        if isinstance(label, str):
-            label_dict = parse_label(label)
-        elif isinstance(label, dict):
-            label_dict = label
-        else:
-            raise ValueError("label must be str or dict")
-        label = pd.Series(label_dict, dtype="int64")
+        if not isinstance(label, Label):
+            raise TypeError("label must be Label instance")
         molecule_series = self.get_molecule_light_isotopes()
         light_isotopes = self.subtract_label(molecule_series, label)
-        formula_isotopes = pd.concat([light_isotopes, label])
+        formula_isotopes = pd.concat([light_isotopes, label.as_series])
         mass = (
             self.isotopes.isotope_mass_series.multiply(formula_isotopes).dropna().sum()
         )
         return mass
+
+
+class Label:
+    """Class for storing label information."""
+
+    def __init__(self, string):
+        """Class contains label in different repressentations (dict, series, str)."""
+        self.as_string = string
+        self.as_dict = self.parse_label(string)
+        self.as_series = pd.Series(self.as_dict, dtype="int64")
+        self.mass = self.as_series.sum()  # Coarse mass of label alone
+
+    def get_diff_label_series(self, label2):
+        """Return difference between two labels as pandas Series.
+        Label2 - Label1.
+        """
+        if not isinstance(label2, Label):
+            raise TypeError("label2 has to be Label instance")
+        return label2.as_series.sub(self.as_series, fill_value=0)
+
+    @staticmethod
+    def parse_label(string):
+        """Parse label e.g. "3C13 2H02"  and return dict.
+
+        Parse label e.g. 5C13N15 and return dictionary of elements and number of atoms
+        Only support H02 (deuterium), C13, N15, 018 and 'No label'
+        Prefix separated by colon can be used and will be ignored, e.g. "NA:2C13"
+        Underscores can be used to separate different elements, e.g. "3C13_6H02"
+
+        Parameters
+        ----------
+        string : str
+            Chemical formula
+
+        Returns
+        -------
+        dict
+            Elements as keys
+            Number as values
+
+        Raises
+        ------
+        TypeError
+            If input is not string.
+        ValueError
+           If label contains more than one colon.
+        ValueError
+            If label contains not allowed isotopes.
+        """
+        if not isinstance(string, str):
+            raise TypeError("label must be string")
+        if string.count(":") > 1:
+            raise ValueError("only one colon allowed in label to separate prefix")
+        string = string.split(":")[-1]
+
+        if string.lower() == "no label":
+            return {}
+        allowed_isotopes = ["H02", "C13", "N15", "O18"]
+        label = re.findall(r"(\d*)([A-Z][a-z]*\d\d)", string)
+        label_dict = {elem: int(num) if num != "" else 1 for num, elem in label}
+        if not set(label_dict).issubset(allowed_isotopes) or not label_dict:
+            # Check for empty list and only allowed isotopes
+            raise ValueError("Label should be H02, C13, N15, 018 or 'No label'")
+        return label_dict
+
+    @staticmethod
+    def isotope_to_element(label):
+        """Change dict key from isotope to element (e.g. H02 -> H)."""
+        atom_label = {}
+        for elem in label.as_dict:
+            if elem == "C13":
+                atom_label["C"] = label.as_dict[elem]
+            elif elem == "N15":
+                atom_label["N"] = label.as_dict[elem]
+            elif elem == "H02":
+                atom_label["H"] = label.as_dict[elem]
+            else:
+                raise ValueError("Only H02, C13 and N15 are allowed as isotopic label")
+        return atom_label
 
 
 def parse_formula(string):
@@ -316,66 +390,6 @@ def parse_formula(string):
     """
     elements = re.findall(r"([A-Z][a-z]*)(\d*)", string)
     return {elem: int(num) if num != "" else 1 for elem, num in elements}
-
-
-def parse_label(string):
-    """Parse label e.g. "3C13 2H02"  and return dict.
-
-    Parse label e.g. 5C13N15 and return dictionary of elements and number of atoms
-    Only support H02 (deuterium), C13, N15 and 'No label'
-    Prefix separated by colon can be used and will be ignored, e.g. "NA:2C13"
-    Underscores can be used to separate different elements, e.g. "3C13_6H02"
-
-    Parameters
-    ----------
-    string : str
-        Chemical formula
-
-    Returns
-    -------
-    dict
-        Elements as keys
-        Number as values
-
-    Raises
-    ------
-    TypeError
-        If input is not string.
-    ValueError
-       If label contains more than one colon.
-    ValueError
-        If label contains not allowed isotopes.
-    """
-    if not isinstance(string, str):
-        raise TypeError("label must be string")
-    if string.count(":") > 1:
-        raise ValueError("only one colon allowed in label to separate prefix")
-    string = string.split(":")[-1]
-
-    if string.lower() == "no label":
-        return {}
-    allowed_isotopes = ["H02", "C13", "N15"]
-    label = re.findall(r"(\d*)([A-Z][a-z]*\d\d)", string)
-    label_dict = {elem: int(num) if num != "" else 1 for num, elem in label}
-    if not set(label_dict).issubset(allowed_isotopes) or not label_dict:
-        # Check for empty list and only allowed isotopes
-        raise ValueError("Label should be H02, C13, N15 or 'No label'")
-    return label_dict
-
-
-def isotope_to_element(label):
-    """Change dict key from isotope to element (e.g. H02 -> H)."""
-    atom_label = {}
-    for elem in label:
-        if elem == "C13":
-            atom_label["C"] = label[elem]
-        elif elem == "N15":
-            atom_label["N"] = label[elem]
-        elif elem == "H02":
-            atom_label["H"] = label[elem]
-        else:
-            raise ValueError("Only H02, C13 and N15 are allowed as isotopic label")
-    return atom_label
 
 
 def sort_labels(labels):
@@ -401,10 +415,7 @@ def sort_labels(labels):
     """
     if isinstance(labels, str):
         raise TypeError("labels must be list-like but not string")
-    masses = {}
-    for label in labels:
-        mass = parse_label(label)
-        masses[label] = sum(mass.values())
+    masses = {label: Label(label).mass for label in labels}
     sorted_masses = sorted(masses.items(), key=lambda kv: kv[1])
     sorted_labels = [lab[0] for lab in sorted_masses]
     return sorted_labels
@@ -420,9 +431,9 @@ def label_shift_smaller(label1, label2):
 
     Parameters
     ----------
-    label1 : str or dict
+    label1 : Label
         Label of isotopologue 1
-    label2 : str or dict
+    label2 : Label
         Label of isotopologue 2
 
     Returns
@@ -430,12 +441,8 @@ def label_shift_smaller(label1, label2):
     bool
         True if label 1 is smaller than label 2, otherwise False
     """
-    if isinstance(label1, str):
-        label1 = parse_label(label1)
-    if isinstance(label2, str):
-        label2 = parse_label(label2)
-    shift_label1 = sum(label1.values())
-    shift_label2 = sum(label2.values())
+    shift_label1 = sum(label1.as_dict.values())
+    shift_label2 = sum(label2.as_dict.values())
 
     return shift_label1 < shift_label2
 
@@ -451,9 +458,10 @@ def calc_correction_factor(
     ----------
     molecule_info : MoleculeInfo
         Instance with molecule and isotope information.
-    label : False or str
+    label : False or Label
+        Instance of Label
         Type and number of atoms.
-        E.g. '5C13N15' or 'No label'. False equals to no label
+        E.g. Label('5C13N15') or Label('No label'). False equals to no label
 
     Returns
     -------
@@ -465,11 +473,7 @@ def calc_correction_factor(
     ValueError
         If there's more labelled atoms than atoms.
     """
-    # Parse label and store information in atom_label dict
-    atom_label = {}
-    if label:
-        label = parse_label(label)
-        atom_label = isotope_to_element(label)
+    atom_label = Label.isotope_to_element(label) if label else {}
 
     n_atoms = molecule_info.formula
     abundance = molecule_info.isotopes.abundance
@@ -490,10 +494,10 @@ def calc_transition_prob(label1, label2, molecule_info):
 
     Parameters
     ----------
-    label1 : str or dict
-        Type of isotopic label, e.g. 1N15
-    label2 : str or dict
-        Type of isotopic label, e.g. 10C1301N15
+    label1 : Label
+        Type of isotopic label, e.g. Label("1N15")
+    label2 : Label
+        Type of isotopic label, e.g. Label("10C1301N15")
     molecule_info : MoleculeInfo
         Instance with molecule and isotope information.
 
@@ -507,23 +511,11 @@ def calc_transition_prob(label1, label2, molecule_info):
     TypeError
         If molecule_info is not correct type.
     """
-    if isinstance(label1, str):
-        label1 = parse_label(label1)
-    if isinstance(label2, str):
-        label2 = parse_label(label2)
-
     if not label_shift_smaller(label1, label2):
         return 0
-
     if not isinstance(molecule_info, MoleculeInfo):
         raise TypeError("molecule_info must be instance of MoleculeInfo class")
-    label1 = pd.Series(label1, dtype="int64")
-    label2 = pd.Series(label2, dtype="int64")
-    difference_labels = label2.sub(label1, fill_value=0)
-    difference_labels.index = difference_labels.index.str[:-2]
-    label1.index = label1.index.str[:-2]
-    label2.index = label2.index.str[:-2]
-    # Checks if transition from label1 to 2 is possible
+    difference_labels = label1.get_diff_label_series(label2)
     if difference_labels.lt(0).any():
         return 0
 
@@ -535,9 +527,9 @@ def calc_label_diff_prob(label1, difference_labels, molecule_info):
 
     Parameters
     ----------
-    label1 : dict
-        Isotope symbol (e.g. N15) as key and number of atoms as value
-    difference_labels : dict
+    label1 : Label
+        Type of isotopic label, e.g. Label("1N15")
+    difference_labels : pd.Series
         Isotope symbol (e.g. N15) as key and number of atoms as value
     molecule_info : MoleculeInfo
         Instance with molecule and isotope information.
@@ -552,7 +544,7 @@ def calc_label_diff_prob(label1, difference_labels, molecule_info):
     prob = []
     for isotope, n_label in difference_labels.items():
         # get number of atoms of isotope, default to 0
-        n_elem_1 = label1.get(isotope, 0)
+        n_elem_1 = label1.as_dict.get(isotope, 0)
         elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
 
         n_unlab = n_atoms[elem] - n_elem_1 - n_label

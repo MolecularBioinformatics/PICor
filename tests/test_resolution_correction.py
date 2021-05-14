@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import unittest
 
-from picor.isotope_probabilities import MoleculeInfo
+from picor.isotope_probabilities import MoleculeInfo, Label
 import picor.resolution_correction as rc
 
 
@@ -37,17 +37,17 @@ class TestMassCalculations(unittest.TestCase):
 
     def test_is_overlap_true(self):
         """Overlapping isotopologues"""
-        res = rc.is_isotologue_overlap("5C13", "4C13 1H02", self.molecule_info, 0.04,)
+        res = rc.is_isotologue_overlap(Label("5C13"), Label("4C13 1H02"), self.molecule_info, 0.04,)
         self.assertTrue(res)
 
     def test_is_overlap_false(self):
         """Non overlapping isotopologues"""
-        res = rc.is_isotologue_overlap("14C13", "14H02", self.molecule_info, 0.04,)
+        res = rc.is_isotologue_overlap(Label("14C13"), Label("14H02"), self.molecule_info, 0.04,)
         self.assertFalse(res)
 
     def test_coarse_mass_difference(self):
         """Difference in nucleons."""
-        res = rc.calc_coarse_mass_difference("No label", "5C13 3N15 2H02")
+        res = rc.calc_coarse_mass_difference(Label("No label"), Label("5C13 3N15 2H02"))
         self.assertEqual(res, 10)
 
     def test_fwhm_result(self):
