@@ -148,6 +148,7 @@ def calc_indirect_overlap_prob(
         if contains_o:
             label_trans["O18"] = n_o
         label_trans_series = pd.Series(label_trans, dtype="float64")
+        # TODO: label1_mod has to be label class
         label1_mod = dict(label1.as_series.add(label_trans_series, fill_value=0))
         if is_isotologue_overlap(label1_mod, label2, molecule_info, min_mass_diff,):
             print(label_trans)
@@ -156,17 +157,12 @@ def calc_indirect_overlap_prob(
     return prob_total
 
 
-def sum_coarse_mass(n_h, n_c, n_o):
-    """Return coarse sum of label composed of H02, C13 and O18."""
-    return n_h + n_c + 2 * n_o
-
-
-def generate_labels(mass_diff, contains_o):
-    """Return combiantions of H02, C13 and O18 for given mass diff."""
-    for label in itertools.product(range(0, mass_diff + 1), repeat=3):
-        if not contains_o and label[2] != 0:
-            continue
-        if sum_coarse_mass(*label) == mass_diff:
+def generate_labels(mass_diff, molecule_info):
+    """Return combinations of H02, C13 and O18 for given mass diff."""
+    elements = molecule_info.get_elements()
+    for comb in itertools.product(range(0, mass_diff + 1), repeat=len(elements)):
+        label = ip.Label(pd.Series(comb, index=elements))
+        if label.get_coarse_mass_shift() == mass_diff:
             yield label
 
 

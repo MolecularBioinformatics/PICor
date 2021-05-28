@@ -31,6 +31,7 @@ class IsotopeInfo:
         self.isotopes_file = isotopes_file
         self.abundance = self.get_isotope_abundance(isotopes_file)
         self.isotope_mass_series = self.get_isotope_mass_series(isotopes_file)
+        self.isotope_shift = self.get_shift(isotopes_file)
 
     @staticmethod
     def get_isotope_abundance(isotopes_file):
@@ -81,6 +82,25 @@ class IsotopeInfo:
             index_col="isotope",
             squeeze=True,
         )
+
+    @staticmethod
+    def get_shift(isotopes_file):
+        """Get series of mass shift between isotopes."""
+        iso_data = pd.read_csv(isotopes_file, sep="\t", index_col="isotope",)
+        iso_data = (
+            iso_data.groupby("element")
+            .apply(
+                lambda gdf: gdf.assign(
+                    shift=lambda df: round(df["mass"] - min(df["mass"]))
+                )
+            )
+            .droplevel(0)
+        )
+        return iso_data["shift"].astype("int64")
+
+    def get_isotopes(self):
+        """Get list of all isotopes."""
+        return list(self.isotope_mass_series.keys())
 
 
 class MoleculeInfo:
@@ -230,6 +250,10 @@ class MoleculeInfo:
             ) from exc
         return charges[molecule_name]
 
+    def get_elements(self):
+        """Return elements of molecules."""
+        return list(self.formula.keys())
+
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""
         molecule_series = pd.Series(self.formula, dtype="int64",)
@@ -277,7 +301,7 @@ class MoleculeInfo:
 
         Raises
         ------
-        ValueError
+        TypeError
             If label is neither str nor dict.
         """
         if not isinstance(label, Label):
@@ -294,12 +318,47 @@ class MoleculeInfo:
 class Label:
     """Class for storing label information."""
 
-    def __init__(self, string):
-        """Class contains label in different repressentations (dict, series, str)."""
-        self.as_string = string
-        self.as_dict = self.parse_label(string)
-        self.as_series = pd.Series(self.as_dict, dtype="int64")
-        self.mass = self.as_series.sum()  # Coarse mass of label alone
+    def __init__(self, label, molecule_info):
+        """Class contains label in different repressentations (dict, series, str).
+
+        Parameters
+        ----------
+        label : str, dict, Series
+            Either string: "No label" or label formula, e.g. "2C13 3H02"
+            or dict: {} or e.g. {"C13": 2, "H02": 3}
+            or pandas Series: Series() or e.g. Series([2, 3], index=["C13", "H02"])
+        molecule_info : MoleculeInfo
+            Instance with molecule and isotope information.
+
+        Raises
+        ------
+        TypeError
+            If label not str, dict or pandas Series
+        """
+        # TODO Use OrderedDict to have unique solution
+        if isinstance(label, str):
+            self.as_string = label
+            self.as_dict = self.parse_label(label)
+            self.as_series = pd.Series(self.as_dict, dtype="int64")
+        elif isinstance(label, dict):
+            self.as_dict = label
+            self.as_series = pd.Series(self.as_dict, dtype="int64")
+            self.as_string = self.generate_label_string(self.as_dict)
+        elif isinstance(label, pd.Series):
+            self.as_series = label
+            self.as_dict = dict(label)
+            self.as_string = self.generate_label_string(self.as_dict)
+        else:
+            raise TypeError("label has to be str, dict or pandas Series")
+        self.molecule_info = molecule_info
+        self.mass = self.get_coarse_mass_shift()  # Coarse mass of label alone
+        self.check_isotopes()
+
+    def check_isotopes(self):
+        """Raise ValueError for label isotopes not in isotope list."""
+        for iso in self.as_dict.keys():
+            if iso not in self.molecule_info.isotopes.get_isotopes():
+                raise ValueError(f"Label atom {iso} not in isotopes file")
 
     def get_diff_label_series(self, label2):
         """Return difference between two labels as pandas Series.
@@ -307,14 +366,25 @@ class Label:
         """
         if not isinstance(label2, Label):
             raise TypeError("label2 has to be Label instance")
-        return label2.as_series.sub(self.as_series, fill_value=0)
+        return label2.as_series.sub(self.as_series, fill_value=0).astype("int64")
+
+    def get_coarse_mass_shift(self):
+        """Return mass of label compared to unlabelled molecule.
+        E.g. 5 for "2C13 2H02"
+        """
+        iso_shift = self.molecule_info.isotopes.isotope_shift
+        return int(self.as_series.multiply(iso_shift).sum())
+
+    @staticmethod
+    def generate_label_string(label_as_dict, sep=" "):
+        """Generate string representation of label instance."""
+        return sep.join([f"{n_atom}{iso}" for iso, n_atom in label_as_dict.items()])
 
     @staticmethod
     def parse_label(string):
         """Parse label e.g. "3C13 2H02"  and return dict.
 
         Parse label e.g. 5C13N15 and return dictionary of elements and number of atoms
-        Only support H02 (deuterium), C13, N15, 018 and 'No label'
         Prefix separated by colon can be used and will be ignored, e.g. "NA:2C13"
         Underscores can be used to separate different elements, e.g. "3C13_6H02"
 
@@ -336,22 +406,23 @@ class Label:
         ValueError
            If label contains more than one colon.
         ValueError
-            If label contains not allowed isotopes.
+            If label string is empty.
         """
         if not isinstance(string, str):
             raise TypeError("label must be string")
         if string.count(":") > 1:
             raise ValueError("only one colon allowed in label to separate prefix")
         string = string.split(":")[-1]
+        if string == "":
+            raise ValueError(
+                "Empty string as label not allowed.\n"
+                "Use 'No label' instead or specify label."
+            )
 
         if string.lower() == "no label":
             return {}
-        allowed_isotopes = ["H02", "C13", "N15", "O18"]
         label = re.findall(r"(\d*)([A-Z][a-z]*\d\d)", string)
         label_dict = {elem: int(num) if num != "" else 1 for num, elem in label}
-        if not set(label_dict).issubset(allowed_isotopes) or not label_dict:
-            # Check for empty list and only allowed isotopes
-            raise ValueError("Label should be H02, C13, N15, 018 or 'No label'")
         return label_dict
 
     @staticmethod
@@ -400,22 +471,15 @@ def sort_labels(labels):
 
     Parameters
     ----------
-    labels : list of str
-        labels (e.g. ["No label","N15","5C13"])
+    labels : list of Labels
+        All elements of list must be of instance Label
 
     Returns
     -------
-    list of str
+    list of Labels
         Sorted list
-
-    Raises
-    ------
-    TypeError
-        If labels are str.
     """
-    if isinstance(labels, str):
-        raise TypeError("labels must be list-like but not string")
-    masses = {label: Label(label).mass for label in labels}
+    masses = {label: label.mass for label in labels}
     sorted_masses = sorted(masses.items(), key=lambda kv: kv[1])
     sorted_labels = [lab[0] for lab in sorted_masses]
     return sorted_labels
@@ -489,7 +553,7 @@ def calc_correction_factor(
     return 1 / probability
 
 
-def calc_transition_prob(label1, label2, molecule_info):
+def calc_transition_prob(label1, label2):
     """Calculate the probablity between two (un-)labelled isotopologues.
 
     Parameters
@@ -498,31 +562,22 @@ def calc_transition_prob(label1, label2, molecule_info):
         Type of isotopic label, e.g. Label("1N15")
     label2 : Label
         Type of isotopic label, e.g. Label("10C1301N15")
-    molecule_info : MoleculeInfo
-        Instance with molecule and isotope information.
 
     Returns
     -------
     float
         Transition probability
-
-    Raises
-    ------
-    TypeError
-        If molecule_info is not correct type.
     """
     if not label_shift_smaller(label1, label2):
         return 0
-    if not isinstance(molecule_info, MoleculeInfo):
-        raise TypeError("molecule_info must be instance of MoleculeInfo class")
     difference_labels = label1.get_diff_label_series(label2)
     if difference_labels.lt(0).any():
         return 0
 
-    return calc_label_diff_prob(label1, difference_labels, molecule_info)
+    return calc_label_diff_prob(label1, difference_labels)
 
 
-def calc_label_diff_prob(label1, difference_labels, molecule_info):
+def calc_label_diff_prob(label1, difference_labels):
     """Calculate the transition probablity of difference in labelled atoms.
 
     Parameters
@@ -531,15 +586,13 @@ def calc_label_diff_prob(label1, difference_labels, molecule_info):
         Type of isotopic label, e.g. Label("1N15")
     difference_labels : pd.Series
         Isotope symbol (e.g. N15) as key and number of atoms as value
-    molecule_info : MoleculeInfo
-        Instance with molecule and isotope information.
     Returns
     -------
     float
         Transition probability
     """
-    n_atoms = molecule_info.formula
-    abundance = molecule_info.isotopes.abundance
+    n_atoms = label1.molecule_info.formula
+    abundance = label1.molecule_info.isotopes.abundance
 
     prob = []
     for isotope, n_label in difference_labels.items():

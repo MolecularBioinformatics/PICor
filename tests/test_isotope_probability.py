@@ -5,6 +5,8 @@ import unittest
 
 import numpy
 import pandas
+from pandas.testing import assert_series_equal
+
 import picor.isotope_probabilities as ip
 
 
@@ -18,6 +20,24 @@ class TestLabels(unittest.TestCase):
 
     molecules_file = Path("tests/test_metabolites.csv")
     isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = ip.MoleculeInfo.get_molecule_info(
+        molecule_name="Test1",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
+
+    def test_init_label_dict(self):
+        """Init Label instance with dict as input."""
+        data = {"C13": 2, "O18": 3, "H02": 2}
+        res = ip.Label(data, self.molecule_info)
+        self.assertEqual(res.as_dict, data)
+
+    def test_init_label_series(self):
+        """Init Label instance with pandas Series as input."""
+        data = pandas.Series([2, 3, 2], index=["C13", "O18", "H02"])
+        res_corr = {"C13": 2, "O18": 3, "H02": 2}
+        res = ip.Label(data, self.molecule_info)
+        self.assertEqual(res.as_dict, res_corr)
 
     def test_formula_string(self):
         """Parse_formula parses string correctly."""
@@ -36,109 +56,119 @@ class TestLabels(unittest.TestCase):
         """Parse_label parses string correctly."""
         data = "2N153C13H02"
         res_corr = {"N15": 2, "C13": 3, "H02": 1}
-        res = ip.Label(data)
+        res = ip.Label(data, self.molecule_info)
         self.assertEqual(res.as_dict, res_corr)
 
     def test_label_no_label(self):
         """Parse_label parses 'No label' string correctly."""
         data = "No label"
         res_corr = {}
-        res = ip.Label(data)
+        res = ip.Label(data, self.molecule_info)
         self.assertEqual(res.as_dict, res_corr)
 
     def test_label_bad_type(self):
         """Parse_label raises TypeError with list as input."""
         data = ["1C13", "H02"]
         with self.assertRaises(TypeError):
-            ip.Label(data)
+            ip.Label(data, self.molecule_info)
 
-    def test_label_bad_isotope(self):
-        """Parse_label raises ValueError with unrecognized string as input."""
-        bad_isotope_list = ["C14", "B11", "Be9", "H02C14"]
-        for data in bad_isotope_list:
-            with self.assertRaises(ValueError):
-                ip.Label(data)
+    def test_parse_label_bad_type(self):
+        """Parse_label raises TypeError for wrong Type."""
+        bad_type_list = [["C13"], {"C13": 2}, 2]
+        for data in bad_type_list:
+            with self.assertRaises(TypeError):
+                ip.Label.parse_label(data)
 
     def test_label_empty_string(self):
         """Parse_label raises ValueError with empty input string."""
         data = ""
         with self.assertRaises(ValueError):
-            ip.Label(data)
+            ip.Label(data, self.molecule_info)
 
     def test_label_split_label(self):
         """Parse_label parses composite label correctly."""
         data = "NAD:2N153C13H02"
         res_corr = {"N15": 2, "C13": 3, "H02": 1}
-        res = ip.Label(data)
+        res = ip.Label(data, self.molecule_info)
         self.assertEqual(res.as_dict, res_corr)
 
     def test_label_bad_split_label(self):
         """Parse_label raises ValueError with bad composite label."""
         data = "NAD:NamPT:2N153C13H02"
         with self.assertRaises(ValueError):
-            ip.Label(data)
+            ip.Label(data, self.molecule_info)
+
+    def test_generate_label_string(self):
+        """generate_label_string return correct string."""
+        data = {"N15": 2, "C13": 3, "H02": 1}
+        res_corr = "2N15 3C13 1H02"
+        res = ip.Label.generate_label_string(data)
+        self.assertEqual(res, res_corr)
 
     def test_sort_list(self):
         """Sort_labels gives correct order with list of strings."""
-        data = ["4C13", "3C13", "N154C13", "No label"]
+        data = [
+            ip.Label(l, self.molecule_info)
+            for l in ["4C13", "3C13", "N154C13", "No label"]
+        ]
         res_corr = ["No label", "3C13", "4C13", "N154C13"]
         res = ip.sort_labels(data)
-        self.assertEqual(res, res_corr)
-
-    def test_sort_bad_type(self):
-        """TypeError with string as input."""
-        data = "N15"
-        with self.assertRaises(TypeError):
-            ip.sort_labels(data)
+        for t, c in zip(res, res_corr):
+            self.assertEqual(t.as_string, c)
 
     def test_label_smaller_true(self):
         """Label_shift_smaller returns True for label1 being smaller."""
-        label1 = ip.Label("C132N15")  # Mass shift of 3
-        label2 = ip.Label("5N15")  # Mass shift of 5
+        label1 = ip.Label("C132N15", self.molecule_info)  # Mass shift of 3
+        label2 = ip.Label("5N15", self.molecule_info)  # Mass shift of 5
         res = ip.label_shift_smaller(label1, label2)
         self.assertTrue(res)
 
     def test_label_smaller_false(self):
         """Label_shift_smaller returns False for label1 being larger."""
-        label1 = ip.Label("C1310N15")  # Mass shift of 11
-        label2 = ip.Label("5N15")  # Mass shift of 5
+        label1 = ip.Label("C1310N15", self.molecule_info)  # Mass shift of 11
+        label2 = ip.Label("5N15", self.molecule_info)  # Mass shift of 5
         res = ip.label_shift_smaller(label1, label2)
         self.assertFalse(res)
 
     def test_label_smaller_equal(self):
         """Label_shift_smaller returns False for labels with equal mass."""
-        label1 = ip.Label("C1310N15")  # Mass shift of 11
-        label2 = ip.Label("11N15")  # Mass shift of 5
+        label1 = ip.Label("C1310N15", self.molecule_info)  # Mass shift of 11
+        label2 = ip.Label("11N15", self.molecule_info)  # Mass shift of 5
         res = ip.label_shift_smaller(label1, label2)
         self.assertFalse(res)
 
     def test_isotope_to_element_result(self):
         """Return correct elements."""
-        label = ip.Label("2N15 3C13 1H02")
+        label = ip.Label("2N15 3C13 1H02", self.molecule_info)
         res_corr = {"N": 2, "C": 3, "H": 1}
         res = label.isotope_to_element(label)
         self.assertEqual(res, res_corr)
 
     def test_isotope_to_element_bad_element(self):
         """Raise ValueError for undefined element in isotope label."""
-        label = ip.Label("2O18 3C13 1H02")
+        label = ip.Label("2O18 3C13 1H02", self.molecule_info)
         with self.assertRaises(ValueError):
             label.isotope_to_element(label)
 
     def test_get_diff_label_series_result(self):
         """Return correct elements."""
-        label1 = ip.Label("1N15 1C13")
-        label2 = ip.Label("2N15 3C13 1H02")
-        res_corr = pandas.Series({"N15": 1, "C13": 2, "H02": 1})
+        label1 = ip.Label("1N15 1C13", self.molecule_info)
+        label2 = ip.Label("2N15 3C13 1H02", self.molecule_info)
+        res_corr = pandas.Series({"C13": 2, "H02": 1, "N15": 1})
         res = label1.get_diff_label_series(label2)
-        self.assertEqual(res, res_corr)
+        assert_series_equal(res, res_corr)
 
     def test_get_diff_label_series_bad_type(self):
         """Raise TypeError for dict as label."""
-        label1 = ip.Label("2O18 3C13 1H02")
+        label1 = ip.Label("2O18 3C13 1H02", self.molecule_info)
         label2 = {"N": 1, "C": 2, "H": 1}
         with self.assertRaises(TypeError):
             label1.get_diff_label_series(label2)
+
+    def test_check_isotopes_error(self):
+        """ValueError is raised for unknown isotope."""
+        with self.assertRaises(ValueError):
+            ip.Label("2O15 3C13 1H02", self.molecule_info)
 
 
 class TestIsotopeInfo(unittest.TestCase):
@@ -272,7 +302,7 @@ class TestMoleculeInfo(unittest.TestCase):
             molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
-        res = molecule.calc_isotopologue_mass(ip.Label("No label"))
+        res = molecule.calc_isotopologue_mass(ip.Label("No label", molecule))
         self.assertAlmostEqual(res, 664.116947, places=5)
 
     def test_mass_label(self):
@@ -282,7 +312,7 @@ class TestMoleculeInfo(unittest.TestCase):
             molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
-        res = molecule.calc_isotopologue_mass(ip.Label("15C13"))
+        res = molecule.calc_isotopologue_mass(ip.Label("15C13", molecule))
         self.assertAlmostEqual(res, 679.167270, places=5)
 
     def test_mass_bad_label_type(self):
@@ -303,7 +333,7 @@ class TestMoleculeInfo(unittest.TestCase):
             isotopes_file=self.isotopes_file,
         )
         with self.assertRaises(ValueError):
-            molecule.calc_isotopologue_mass(ip.Label("55C13"))
+            molecule.calc_isotopologue_mass(ip.Label("55C13", molecule))
 
     def test_get_charge_result(self):
         """Correct molecule charge."""
@@ -314,6 +344,17 @@ class TestMoleculeInfo(unittest.TestCase):
         """ValueError if value in 'charge' column is missing."""
         with self.assertRaises(ValueError):
             ip.MoleculeInfo.get_charge("Test4", self.molecules_file2)
+
+    def test_get_elements_result(self):
+        """Return correct list of elements."""
+        molecule = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        res = molecule.get_elements()
+        res_corr = ["C", "H", "N", "O", "P"]
+        self.assertListEqual(res, res_corr)
 
 
 class TestCorrectionFactor(unittest.TestCase):
@@ -335,7 +376,7 @@ class TestCorrectionFactor(unittest.TestCase):
     def test_result_with_label(self):
         """Result with complex label."""
         res = ip.calc_correction_factor(
-            self.molecule_info, label=ip.Label("10C13 1N15 12H02"),
+            self.molecule_info, label=ip.Label("10C13 1N15 12H02", self.molecule_info),
         )
         self.assertAlmostEqual(res, 1.19257588)
 
@@ -343,7 +384,7 @@ class TestCorrectionFactor(unittest.TestCase):
         """ValueError with impossible label."""
         with self.assertRaises(ValueError):
             ip.calc_correction_factor(
-                self.molecule_info, label=ip.Label("100C131N15"),
+                self.molecule_info, label=ip.Label("100C131N15", self.molecule_info),
             )
 
 
@@ -360,47 +401,47 @@ class TestTransitionProbability(unittest.TestCase):
 
     def test_result_label1_smaller(self):
         """Result with label1 being smaller than label2."""
-        label1 = ip.Label("2N15")
-        label2 = ip.Label("2N152C13")
-        res = ip.calc_transition_prob(label1, label2, self.molecule_info,)
+        label1 = ip.Label("2N15", self.molecule_info)
+        label2 = ip.Label("2N152C13", self.molecule_info)
+        res = ip.calc_transition_prob(label1, label2)
         self.assertAlmostEqual(res, 0.03685030)
 
     def test_result_label1_equal(self):
         """Result with label1 being equal to label2."""
-        label1 = ip.Label("1N15")
-        res = ip.calc_transition_prob(label1, label1, self.molecule_info,)
+        label1 = ip.Label("1N15", self.molecule_info)
+        res = ip.calc_transition_prob(label1, label1)
         self.assertEqual(res, 0)
 
     def test_result_label_missmatch(self):
         """Result with no possbile transition."""
-        label1 = ip.Label("2N153C13")
-        label2 = ip.Label("1N155C13")
-        res = ip.calc_transition_prob(label1, label2, self.molecule_info,)
+        label1 = ip.Label("2N153C13", self.molecule_info)
+        label2 = ip.Label("1N155C13", self.molecule_info)
+        res = ip.calc_transition_prob(label1, label2)
         self.assertEqual(res, 0)
 
     def test_result_label1_larger(self):
         """Result with label1 being larger than label2."""
-        label1 = ip.Label("2N152C13")
-        label2 = ip.Label("2N15")
-        res = ip.calc_transition_prob(label1, label2, self.molecule_info,)
+        label1 = ip.Label("2N152C13", self.molecule_info)
+        label2 = ip.Label("2N15", self.molecule_info)
+        res = ip.calc_transition_prob(label1, label2)
         self.assertEqual(res, 0)
 
     def test_result_molecule_formula(self):
         """Result with molecule formula."""
-        label1 = ip.Label("1N15")
-        label2 = ip.Label("2N152C13")
         molecule_info = ip.MoleculeInfo.get_molecule_info(
             molecule_name="Test1",
             molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
-        res = ip.calc_transition_prob(label1, label2, molecule_info,)
+        label1 = ip.Label("1N15", molecule_info)
+        label2 = ip.Label("2N152C13", molecule_info)
+        res = ip.calc_transition_prob(label1, label2)
         self.assertAlmostEqual(res, 0.00042029)
 
     def test_wrong_type(self):
         """Type error with dict as molecule."""
-        label1 = ip.Label("1N15")
-        label2 = ip.Label("2N152C13")
+        label1 = ip.Label("1N15", self.molecule_info)
+        label2 = ip.Label("2N152C13", self.molecule_info)
         molecule = {"C": 12, "N": 15}
         with self.assertRaises(TypeError):
             ip.calc_transition_prob(
