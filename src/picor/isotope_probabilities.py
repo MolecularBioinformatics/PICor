@@ -33,6 +33,9 @@ class IsotopeInfo:
         self.isotope_mass_series = self.get_isotope_mass_series(isotopes_file)
         self.isotope_shift = self.get_shift(isotopes_file)
 
+    def __repr__(self):
+        return f"IsotopeInfo('{self.isotopes_file}')"
+
     @staticmethod
     def get_isotope_abundance(isotopes_file):
         """Get abundace of different isotopes.
@@ -124,6 +127,9 @@ class MoleculeInfo:
         self.formula = formula
         self.charge = int(charge)
 
+    def __repr__(self):
+        return f"MoleculeInfo({self.formula}, {self.charge}, {self.isotopes})"
+
     @classmethod
     def get_molecule_info(
         cls,
@@ -162,7 +168,7 @@ class MoleculeInfo:
         Returns
         -------
         MoleculeInfo
-            Instance of class with formula, cahrge and isotope data.
+            Instance of class with formula, charge and isotope data.
         """
         if molecule_name and molecules_file and not molecule_formula:
             molecule = cls.create_from_name(
@@ -353,6 +359,12 @@ class Label:
         self.molecule_info = molecule_info
         self.mass = self.get_coarse_mass_shift()  # Coarse mass of label alone
         self.check_isotopes()
+
+    def __repr__(self):
+        return f"Label({self.as_dict}, {self.molecule_info})"
+
+    def __str__(self):
+        return f"Label: {self.as_string}"
 
     def check_isotopes(self):
         """Raise ValueError for label isotopes not in isotope list."""
