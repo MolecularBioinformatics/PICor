@@ -98,6 +98,14 @@ class TestLabels(unittest.TestCase):
         with self.assertRaises(ValueError):
             ip.Label(data, self.molecule_info)
 
+    def test_str_result(self):
+        """Return correct string representation."""
+        data = "2N153C13H02"
+        res = str(ip.Label(data, self.molecule_info))
+        res_corr = "Label: 2N153C13H02"
+        self.assertEqual(res, res_corr)
+
+
     def test_generate_label_string(self):
         """generate_label_string return correct string."""
         data = {"N15": 2, "C13": 3, "H02": 1}
