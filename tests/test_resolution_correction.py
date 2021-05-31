@@ -38,20 +38,29 @@ class TestMassCalculations(unittest.TestCase):
     def test_is_overlap_true(self):
         """Overlapping isotopologues"""
         res = rc.is_isotologue_overlap(
-            Label("5C13"), Label("4C13 1H02"), self.molecule_info, 0.04,
+            Label("5C13", self.molecule_info),
+            Label("4C13 1H02", self.molecule_info),
+            self.molecule_info,
+            0.04,
         )
         self.assertTrue(res)
 
     def test_is_overlap_false(self):
         """Non overlapping isotopologues"""
         res = rc.is_isotologue_overlap(
-            Label("14C13"), Label("14H02"), self.molecule_info, 0.04,
+            Label("14C13", self.molecule_info),
+            Label("14H02", self.molecule_info),
+            self.molecule_info,
+            0.04,
         )
         self.assertFalse(res)
 
     def test_coarse_mass_difference(self):
         """Difference in nucleons."""
-        res = rc.calc_coarse_mass_difference(Label("No label"), Label("5C13 3N15 2H02"))
+        res = rc.calc_coarse_mass_difference(
+            Label("No label", self.molecule_info),
+            Label("5C13 3N15 2H02", self.molecule_info),
+        )
         self.assertEqual(res, 10)
 
     def test_fwhm_result(self):
@@ -86,14 +95,16 @@ class TestOverlapWarnings(unittest.TestCase):
         """Warning with overlapping labels."""
         with self.assertWarns(UserWarning):
             rc.warn_direct_overlap(
-                [Label("4H02"), Label("4C13")], self.molecule_info, 0.05,
+                [Label("4H02", self.molecule_info), Label("4C13", self.molecule_info)],
+                self.molecule_info,
+                0.05,
             )
 
     def test_indirect_overlap_warn(self):
         """Warning with indirectly overlapping labels."""
         label_list = [
-            [Label("3H02"), Label("4C13")],
-            [Label("1H02 1C13"), Label("5C13")],
+            [Label("3H02", self.molecule_info), Label("4C13", self.molecule_info)],
+            [Label("1H02 1C13", self.molecule_info), Label("5C13", self.molecule_info)],
         ]
         for labels in label_list:
             with self.assertWarns(UserWarning):

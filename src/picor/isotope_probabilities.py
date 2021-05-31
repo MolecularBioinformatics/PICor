@@ -101,6 +101,17 @@ class IsotopeInfo:
         )
         return iso_data["shift"].astype("int64")
 
+    def get_isotopes_from_elements(self, element_list):
+        """Get list of isotopes based on elements."""
+        iso_data = pd.read_csv(
+            self.isotopes_file,
+            sep="\t",
+            index_col="element",
+            usecols=["element", "isotope"],
+            squeeze=True,
+        )
+        return list(iso_data[element_list])
+
     def get_isotopes(self):
         """Get list of all isotopes."""
         return list(self.isotope_mass_series.keys())
@@ -260,6 +271,11 @@ class MoleculeInfo:
         """Return elements of molecules."""
         return list(self.formula.keys())
 
+    def get_isotopes(self):
+        """Return all possible isotopes in molecule."""
+        elements = self.get_elements()
+        return self.isotopes.get_isotopes_from_elements(elements)
+
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""
         molecule_series = pd.Series(self.formula, dtype="int64",)
@@ -351,7 +367,7 @@ class Label:
             self.as_series = pd.Series(self.as_dict, dtype="int64")
             self.as_string = self.generate_label_string(self.as_dict)
         elif isinstance(label, pd.Series):
-            self.as_series = label
+            self.as_series = label.astype("int64")
             self.as_dict = dict(label)
             self.as_string = self.generate_label_string(self.as_dict)
         else:
@@ -372,13 +388,41 @@ class Label:
             if iso not in self.molecule_info.isotopes.get_isotopes():
                 raise ValueError(f"Label atom {iso} not in isotopes file")
 
-    def get_diff_label_series(self, label2):
-        """Return difference between two labels as pandas Series.
-        Label2 - Label1.
+    def subtract(self, other):
+        """Return difference between two labels as new Label instance.
+        self - other
         """
-        if not isinstance(label2, Label):
-            raise TypeError("label2 has to be Label instance")
-        return label2.as_series.sub(self.as_series, fill_value=0).astype("int64")
+        if not isinstance(other, Label):
+            raise TypeError("Both labels has to be Label instance")
+        if self.molecule_info != other.molecule_info:
+            raise ValueError("Labels have different molecule_info.")
+        return Label(
+            self.as_series.sub(other.as_series, fill_value=0).astype("int64"),
+            self.molecule_info,
+        )
+
+    def add(self, other):
+        """Add other label and return new Label instance.
+
+        Parameters
+        ----------
+        other : Label
+
+        Returns
+        -------
+        Label
+            New summed label
+
+        Raises
+        ------
+        ValueError
+            Both labels have different molecule information.
+        """
+        if self.molecule_info != other.molecule_info:
+            raise ValueError("Labels have different molecule_info.")
+        return Label(
+            self.as_series.add(other.as_series, fill_value=0), self.molecule_info
+        )
 
     def get_coarse_mass_shift(self):
         """Return mass of label compared to unlabelled molecule.
@@ -582,8 +626,8 @@ def calc_transition_prob(label1, label2):
     """
     if not label_shift_smaller(label1, label2):
         return 0
-    difference_labels = label1.get_diff_label_series(label2)
-    if difference_labels.lt(0).any():
+    difference_labels = label2.subtract(label1)
+    if difference_labels.as_series.lt(0).any():
         return 0
 
     return calc_label_diff_prob(label1, difference_labels)
@@ -603,13 +647,15 @@ def calc_label_diff_prob(label1, difference_labels):
     float
         Transition probability
     """
+    # TODO currently only works without O17 isotope
     n_atoms = label1.molecule_info.formula
     abundance = label1.molecule_info.isotopes.abundance
 
     prob = []
-    for isotope, n_label in difference_labels.items():
+    for isotope, n_label in difference_labels.as_series.items():
         # get number of atoms of isotope, default to 0
         n_elem_1 = label1.as_dict.get(isotope, 0)
+        # TODO redo this part to get rid of re
         elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
 
         n_unlab = n_atoms[elem] - n_elem_1 - n_label

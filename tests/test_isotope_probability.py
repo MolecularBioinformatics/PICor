@@ -105,7 +105,6 @@ class TestLabels(unittest.TestCase):
         res_corr = "Label: 2N153C13H02"
         self.assertEqual(res, res_corr)
 
-
     def test_generate_label_string(self):
         """generate_label_string return correct string."""
         data = {"N15": 2, "C13": 3, "H02": 1}
@@ -158,20 +157,66 @@ class TestLabels(unittest.TestCase):
         with self.assertRaises(ValueError):
             label.isotope_to_element(label)
 
-    def test_get_diff_label_series_result(self):
+    def test_add_result(self):
         """Return correct elements."""
         label1 = ip.Label("1N15 1C13", self.molecule_info)
         label2 = ip.Label("2N15 3C13 1H02", self.molecule_info)
-        res_corr = pandas.Series({"C13": 2, "H02": 1, "N15": 1})
-        res = label1.get_diff_label_series(label2)
-        assert_series_equal(res, res_corr)
+        res_corr = ip.Label(
+            pandas.Series({"C13": 4, "H02": 1, "N15": 3}), self.molecule_info
+        )
+        res = label2.add(label1)
+        assert_series_equal(res.as_series, res_corr.as_series)
 
-    def test_get_diff_label_series_bad_type(self):
+    def test_add_different_molecule(self):
+        """Raise ValueError if labels have different molecule_info instances."""
+        molecule_info1 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        molecule_info2 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test4",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        label1 = ip.Label("1N15 1C13", molecule_info1)
+        label2 = ip.Label("2N15 3C13 1H02", molecule_info2)
+        with self.assertRaises(ValueError):
+            label1.add(label2)
+
+    def test_subtract_result(self):
+        """Return correct elements."""
+        label1 = ip.Label("1N15 1C13", self.molecule_info)
+        label2 = ip.Label("2N15 3C13 1H02", self.molecule_info)
+        res_corr = ip.Label(
+            pandas.Series({"C13": 2, "H02": 1, "N15": 1}), self.molecule_info
+        )
+        res = label2.subtract(label1)
+        assert_series_equal(res.as_series, res_corr.as_series)
+
+    def test_subtract_bad_type(self):
         """Raise TypeError for dict as label."""
         label1 = ip.Label("2O18 3C13 1H02", self.molecule_info)
         label2 = {"N": 1, "C": 2, "H": 1}
         with self.assertRaises(TypeError):
-            label1.get_diff_label_series(label2)
+            label1.subtract(label2)
+
+    def test_subtract_different_molecule(self):
+        """Raise ValueError if labels have different molecule_info instances."""
+        molecule_info1 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        molecule_info2 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test4",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        label1 = ip.Label("1N15 1C13", molecule_info1)
+        label2 = ip.Label("2N15 3C13 1H02", molecule_info2)
+        with self.assertRaises(ValueError):
+            label1.subtract(label2)
 
     def test_check_isotopes_error(self):
         """ValueError is raised for unknown isotope."""
@@ -216,6 +261,14 @@ class TestIsotopeInfo(unittest.TestCase):
         res = ip.IsotopeInfo.get_isotope_mass_series(self.isotopes_file)
         self.assertEqual("isotope", res.keys().name)
         self.assertEqual("mass", res.name)
+
+    def test_get_isotopes_from_elements(self):
+        """Correct list of isotopes."""
+        iso = ip.IsotopeInfo(self.isotopes_file)
+        ele = ["C", "O", "H"]
+        res = iso.get_isotopes_from_elements(ele)
+        res_corr = ["C12", "C13", "O16", "O18", "H01", "H02"]
+        self.assertListEqual(res, res_corr)
 
 
 class TestMoleculeInfo(unittest.TestCase):
@@ -362,6 +415,17 @@ class TestMoleculeInfo(unittest.TestCase):
         )
         res = molecule.get_elements()
         res_corr = ["C", "H", "N", "O", "P"]
+        self.assertListEqual(res, res_corr)
+
+    def test_get_isotopes_result(self):
+        """Return correct list of isotopes."""
+        molecule = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        res = molecule.get_isotopes()
+        res_corr = ["C12", "C13", "H01", "H02", "N14", "N15", "O16", "O18", "P31"]
         self.assertListEqual(res, res_corr)
 
 

@@ -136,32 +136,21 @@ def calc_indirect_overlap_prob(
     if coarse_mass_difference <= 0:
         return 0
 
-    # Check if standard transition is possible
-    label_diff = label1.get_diff_label_series(label2)
-    if label_diff.ge(0).all():
-        return 0
-
     probs = []
-    contains_o = "O" in molecule_info.formula
-    for (n_h, n_c, n_o) in generate_labels(coarse_mass_difference, contains_o):
-        label_trans = {"H02": n_h, "C13": n_c}
-        if contains_o:
-            label_trans["O18"] = n_o
-        label_trans_series = pd.Series(label_trans, dtype="float64")
-        # TODO: label1_mod has to be label class
-        label1_mod = dict(label1.as_series.add(label_trans_series, fill_value=0))
+    for label_trans in generate_labels(coarse_mass_difference, molecule_info):
+        label1_mod = label1.add(label_trans)
         if is_isotologue_overlap(label1_mod, label2, molecule_info, min_mass_diff,):
-            print(label_trans)
-            probs.append(calc_label_diff_prob(label1, label_trans, molecule_info))
+            probs.append(calc_label_diff_prob(label1, label_trans))
     prob_total = sum(probs)
     return prob_total
 
 
 def generate_labels(mass_diff, molecule_info):
     """Return combinations of H02, C13 and O18 for given mass diff."""
-    elements = molecule_info.get_elements()
-    for comb in itertools.product(range(0, mass_diff + 1), repeat=len(elements)):
-        label = ip.Label(pd.Series(comb, index=elements))
+    shift = molecule_info.isotopes.isotope_shift[molecule_info.get_isotopes()]
+    isotopes = shift[shift > 0].index  # only use isotope that cause mass shift
+    for comb in itertools.product(range(0, mass_diff + 1), repeat=len(isotopes)):
+        label = Label(pd.Series(comb, index=isotopes), molecule_info)
         if label.get_coarse_mass_shift() == mass_diff:
             yield label
 
