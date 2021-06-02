@@ -4,6 +4,7 @@ Functions:
     calc_correction_factor: Get correction factor for molecule and label.
     calc_transition_prob: Get transition probablity for two isotopologues.
 """
+from collections.abc import Sequence
 from functools import reduce
 from operator import mul
 import re
@@ -517,6 +518,35 @@ class Label:
             else:
                 raise ValueError("Only H02, C13 and N15 are allowed as isotopic label")
         return atom_label
+
+
+class LabelTuple(Sequence):
+    """Class to manage multiple labels."""
+
+    __slots__ = ("_items", "molecule_info")
+
+    def __init__(self, label_list, molecule_info):
+        """Class contains tuple of labels from list of strings.
+
+        Parameters
+        ----------
+        label_list : list
+            List of label strings
+        molecule_info : MoleculeInfo
+            Instance with molecule and isotope information.
+        """
+        labels = [Label(label, molecule_info) for label in label_list]
+        self._items = sort_labels(labels)
+        self.molecule_info = molecule_info
+
+    def __getitem__(self, index):
+        return self._items[index]
+
+    def __len__(self):
+        return len(self._items)
+
+    def __repr__(self):
+        return f"LabelTuple({[label.as_string for label in self._items]}, {self.molecule_info})"
 
 
 def parse_formula(string):

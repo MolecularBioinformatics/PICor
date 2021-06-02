@@ -271,6 +271,32 @@ class TestLabels(unittest.TestCase):
             label.calc_isotopologue_mass()
 
 
+class TestLabelTuple(unittest.TestCase):
+    """LabelTuple creation."""
+
+    molecules_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = ip.MoleculeInfo.get_molecule_info(
+        molecule_name="Test1",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
+
+    def test_init_result(self):
+        """Correct results for list of labels."""
+        data = ["C13", "2C13 2H02", "H02"]
+        res = ip.LabelTuple(data, self.molecule_info)
+        self.assertEqual(len(res), 3)
+        self.assertEqual(res[2], ip.Label("2C13 2H02", self.molecule_info))
+        self.assertEqual(res.molecule_info, self.molecule_info)
+
+    def test_getitem(self):
+        """Get value."""
+        data = ["C13", "2C13 2H02", "H02"]
+        lt = ip.LabelTuple(data, self.molecule_info)
+        self.assertEqual(lt[2], ip.Label("2C13 2H02", self.molecule_info))
+
+
 class TestIsotopeInfo(unittest.TestCase):
     """Isotope file parsing."""
 
