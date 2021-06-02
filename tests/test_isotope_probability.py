@@ -39,6 +39,56 @@ class TestLabels(unittest.TestCase):
         res = ip.Label(data, self.molecule_info)
         self.assertEqual(res.as_dict, res_corr)
 
+    def test_eq_true(self):
+        """Test __eq__ for same Label Instance."""
+        data = {"C13": 2, "O18": 3, "H02": 2}
+        label1 = ip.Label(data, self.molecule_info)
+        label2 = ip.Label(data, self.molecule_info)
+        self.assertTrue(label1 == label2)
+
+    def test_eq_false(self):
+        """Test __eq__ for different Label Instance."""
+        data1 = {"C13": 2, "O18": 3, "H02": 2}
+        data2 = {"C13": 1, "O18": 3, "H02": 2}
+        label1 = ip.Label(data1, self.molecule_info)
+        label2 = ip.Label(data2, self.molecule_info)
+        self.assertFalse(label1 == label2)
+
+    def test_eq_false_type(self):
+        """Test __eq__ for differnt types."""
+        data = {"C13": 2, "O18": 3, "H02": 2}
+        label = ip.Label(data, self.molecule_info)
+        iso = ip.IsotopeInfo(self.isotopes_file)
+        self.assertFalse(label == iso)
+
+    def test_lt(self):
+        """Test __lt__."""
+        label1 = ip.Label({"C13": 2, "H02": 3}, self.molecule_info)
+        label2 = ip.Label({"O18": 3, "H02": 1}, self.molecule_info)
+        self.assertTrue(label1 < label2)
+
+    def test_ge(self):
+        """Test __ge__."""
+        label1 = ip.Label({"C13": 2, "H02": 3}, self.molecule_info)
+        label2 = ip.Label({"O18": 1, "H02": 1}, self.molecule_info)
+        label3 = ip.Label({"O18": 1, "H02": 3}, self.molecule_info)
+        self.assertTrue(label1 >= label2)
+        self.assertTrue(label1 >= label3)
+
+    def test_le(self):
+        """Test __le__."""
+        label1 = ip.Label({"C13": 2, "H02": 3}, self.molecule_info)
+        label2 = ip.Label({"O18": 3, "H02": 1}, self.molecule_info)
+        label3 = ip.Label({"O18": 2, "H02": 1}, self.molecule_info)
+        self.assertTrue(label1 <= label2)
+        self.assertTrue(label1 <= label3)
+
+    def test_gt(self):
+        """Test __gt__."""
+        label1 = ip.Label({"C13": 2, "H02": 3}, self.molecule_info)
+        label2 = ip.Label({"O18": 1, "H02": 1}, self.molecule_info)
+        self.assertTrue(label1 > label2)
+
     def test_formula_string(self):
         """Parse_formula parses string correctly."""
         data = "C30Si12H2NO1P2"
@@ -123,27 +173,6 @@ class TestLabels(unittest.TestCase):
         for t, c in zip(res, res_corr):
             self.assertEqual(t.as_string, c)
 
-    def test_label_smaller_true(self):
-        """Label_shift_smaller returns True for label1 being smaller."""
-        label1 = ip.Label("C132N15", self.molecule_info)  # Mass shift of 3
-        label2 = ip.Label("5N15", self.molecule_info)  # Mass shift of 5
-        res = ip.label_shift_smaller(label1, label2)
-        self.assertTrue(res)
-
-    def test_label_smaller_false(self):
-        """Label_shift_smaller returns False for label1 being larger."""
-        label1 = ip.Label("C1310N15", self.molecule_info)  # Mass shift of 11
-        label2 = ip.Label("5N15", self.molecule_info)  # Mass shift of 5
-        res = ip.label_shift_smaller(label1, label2)
-        self.assertFalse(res)
-
-    def test_label_smaller_equal(self):
-        """Label_shift_smaller returns False for labels with equal mass."""
-        label1 = ip.Label("C1310N15", self.molecule_info)  # Mass shift of 11
-        label2 = ip.Label("11N15", self.molecule_info)  # Mass shift of 5
-        res = ip.label_shift_smaller(label1, label2)
-        self.assertFalse(res)
-
     def test_isotope_to_element_result(self):
         """Return correct elements."""
         label = ip.Label("2N15 3C13 1H02", self.molecule_info)
@@ -223,6 +252,24 @@ class TestLabels(unittest.TestCase):
         with self.assertRaises(ValueError):
             ip.Label("2O15 3C13 1H02", self.molecule_info)
 
+    def test_mass_nolabel(self):
+        """Molecule mass calculation without label."""
+        label = ip.Label("No label", self.molecule_info)
+        res = label.calc_isotopologue_mass()
+        self.assertAlmostEqual(res, 664.116947, places=5)
+
+    def test_mass_label(self):
+        """Molecule mass calculation with correct label."""
+        label = ip.Label("15C13", self.molecule_info)
+        res = label.calc_isotopologue_mass()
+        self.assertAlmostEqual(res, 679.167270, places=5)
+
+    def test_mass_bad_label(self):
+        """ValueError for Molecule mass calculation with too large label."""
+        label = ip.Label("55C13", self.molecule_info)
+        with self.assertRaises(ValueError):
+            label.calc_isotopologue_mass()
+
 
 class TestIsotopeInfo(unittest.TestCase):
     """Isotope file parsing."""
@@ -235,6 +282,25 @@ class TestIsotopeInfo(unittest.TestCase):
         self.assertIsInstance(instance.abundance, dict)
         self.assertIsInstance(instance.isotopes_file, Path)
         self.assertIsInstance(instance.isotope_mass_series, pandas.Series)
+
+    def test_eq_true(self):
+        """Test __eq__ for same IsotopeInfo Instance."""
+        iso1 = ip.IsotopeInfo(self.isotopes_file)
+        iso2 = ip.IsotopeInfo(self.isotopes_file)
+        self.assertTrue(iso1 == iso2)
+
+    def test_eq_false(self):
+        """Test __eq__ for different IsotopeInfo Instance."""
+        isotopes_file2 = Path("tests/test_isotopes2.csv")
+        iso1 = ip.IsotopeInfo(self.isotopes_file)
+        iso2 = ip.IsotopeInfo(isotopes_file2)
+        self.assertFalse(iso1 == iso2)
+
+    def test_eq_false_type(self):
+        """Test __eq__ for differnt types."""
+        iso = ip.IsotopeInfo(self.isotopes_file)
+        other = {}
+        self.assertFalse(iso == other)
 
     def test_get_isotope_abundance_result(self):
         """Return correct data."""
@@ -338,6 +404,44 @@ class TestMoleculeInfo(unittest.TestCase):
                 isotopes_file=self.isotopes_file,
             )
 
+    def test_eq_true(self):
+        """Test __eq__ for same MoleculeInfo Instances."""
+        molecule1 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        molecule2 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        self.assertTrue(molecule1 == molecule2)
+
+    def test_eq_false(self):
+        """Test __eq__ for different MoleculeInfo Instance."""
+        molecule1 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        molecule2 = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test4",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        self.assertFalse(molecule1 == molecule2)
+
+    def test_eq_false_type(self):
+        """Test __eq__ for different types."""
+        molecule = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        iso = ip.IsotopeInfo(self.isotopes_file)
+        self.assertFalse(molecule == iso)
+
     def test_molecule_name_unknown(self):
         """Raise KeyError with undefined molecule name."""
         with self.assertRaises(KeyError):
@@ -355,46 +459,6 @@ class TestMoleculeInfo(unittest.TestCase):
                 molecules_file=self.molecules_file,
                 isotopes_file=self.isotopes_file,
             )
-
-    def test_mass_nolabel(self):
-        """Molecule mass calculation without label."""
-        molecule = ip.MoleculeInfo.get_molecule_info(
-            molecule_name="Test1",
-            molecules_file=self.molecules_file,
-            isotopes_file=self.isotopes_file,
-        )
-        res = molecule.calc_isotopologue_mass(ip.Label("No label", molecule))
-        self.assertAlmostEqual(res, 664.116947, places=5)
-
-    def test_mass_label(self):
-        """Molecule mass calculation with correct label."""
-        molecule = ip.MoleculeInfo.get_molecule_info(
-            molecule_name="Test1",
-            molecules_file=self.molecules_file,
-            isotopes_file=self.isotopes_file,
-        )
-        res = molecule.calc_isotopologue_mass(ip.Label("15C13", molecule))
-        self.assertAlmostEqual(res, 679.167270, places=5)
-
-    def test_mass_bad_label_type(self):
-        """TypeError for Molecule mass calculation with list as label."""
-        molecule = ip.MoleculeInfo.get_molecule_info(
-            molecule_name="Test1",
-            molecules_file=self.molecules_file,
-            isotopes_file=self.isotopes_file,
-        )
-        with self.assertRaises(TypeError):
-            molecule.calc_isotopologue_mass(["55C13"])
-
-    def test_mass_bad_label(self):
-        """ValueError for Molecule mass calculation with too large label."""
-        molecule = ip.MoleculeInfo.get_molecule_info(
-            molecule_name="Test1",
-            molecules_file=self.molecules_file,
-            isotopes_file=self.isotopes_file,
-        )
-        with self.assertRaises(ValueError):
-            molecule.calc_isotopologue_mass(ip.Label("55C13", molecule))
 
     def test_get_charge_result(self):
         """Correct molecule charge."""

@@ -36,6 +36,11 @@ class IsotopeInfo:
     def __repr__(self):
         return f"IsotopeInfo('{self.isotopes_file}')"
 
+    def __eq__(self, other):
+        if isinstance(other, IsotopeInfo):
+            return self.isotopes_file == other.isotopes_file
+        return False
+
     @staticmethod
     def get_isotope_abundance(isotopes_file):
         """Get abundace of different isotopes.
@@ -140,6 +145,15 @@ class MoleculeInfo:
 
     def __repr__(self):
         return f"MoleculeInfo({self.formula}, {self.charge}, {self.isotopes})"
+
+    def __eq__(self, other):
+        if isinstance(other, MoleculeInfo):
+            return (
+                self.formula == other.formula
+                and self.charge == other.charge
+                and self.isotopes == other.isotopes
+            )
+        return False
 
     @classmethod
     def get_molecule_info(
@@ -304,38 +318,6 @@ class MoleculeInfo:
                 raise ValueError("Too many labelled atoms")
         return formula_difference
 
-    def calc_isotopologue_mass(
-        self, label,
-    ):
-        """Calculate mass of isotopologue.
-
-        Given the molecule name and label composition, return mass in atomic units.
-
-        Parameters
-        ----------
-        label : Label
-            Instance of Label
-
-        Returns
-        -------
-        float
-            Molecule mass
-
-        Raises
-        ------
-        TypeError
-            If label is neither str nor dict.
-        """
-        if not isinstance(label, Label):
-            raise TypeError("label must be Label instance")
-        molecule_series = self.get_molecule_light_isotopes()
-        light_isotopes = self.subtract_label(molecule_series, label)
-        formula_isotopes = pd.concat([light_isotopes, label.as_series])
-        mass = (
-            self.isotopes.isotope_mass_series.multiply(formula_isotopes).dropna().sum()
-        )
-        return mass
-
 
 class Label:
     """Class for storing label information."""
@@ -381,6 +363,26 @@ class Label:
 
     def __str__(self):
         return f"Label: {self.as_string}"
+
+    def __eq__(self, other):
+        if isinstance(other, Label):
+            return (
+                self.as_dict == other.as_dict
+                and self.molecule_info == other.molecule_info
+            )
+        return False
+
+    def __gt__(self, other):
+        return self.mass > other.mass
+
+    def __lt__(self, other):
+        return self.mass < other.mass
+
+    def __ge__(self, other):
+        return self.mass >= other.mass
+
+    def __le__(self, other):
+        return self.mass <= other.mass
 
     def check_isotopes(self):
         """Raise ValueError for label isotopes not in isotope list."""
@@ -430,6 +432,26 @@ class Label:
         """
         iso_shift = self.molecule_info.isotopes.isotope_shift
         return int(self.as_series.multiply(iso_shift).sum())
+
+    def calc_isotopologue_mass(self):
+        """Calculate mass of isotopologue.
+
+        Given the molecule name and label composition, return mass in atomic units.
+
+        Returns
+        -------
+        float
+            Molecule mass
+        """
+        molecule_series = self.molecule_info.get_molecule_light_isotopes()
+        light_isotopes = self.molecule_info.subtract_label(molecule_series, self)
+        formula_isotopes = pd.concat([light_isotopes, self.as_series])
+        mass = (
+            self.molecule_info.isotopes.isotope_mass_series.multiply(formula_isotopes)
+            .dropna()
+            .sum()
+        )
+        return mass
 
     @staticmethod
     def generate_label_string(label_as_dict, sep=" "):
@@ -535,36 +557,10 @@ def sort_labels(labels):
     list of Labels
         Sorted list
     """
-    masses = {label: label.mass for label in labels}
-    sorted_masses = sorted(masses.items(), key=lambda kv: kv[1])
+    masses = [(label, label.mass) for label in labels]
+    sorted_masses = sorted(masses, key=lambda tup: tup[1])
     sorted_labels = [lab[0] for lab in sorted_masses]
     return sorted_labels
-
-
-def label_shift_smaller(label1, label2):
-    """Check whether the mass shift of label1 is smaller than label2.
-
-    Calculates if mass shift (e.g. 5 for 5C13 label) is smaller for label1
-    than for label2 and returns True if that is the case.
-    Only support H02 (deuterium),  C13 and N15 as labels.
-    label can also be "No label" or something similar.
-
-    Parameters
-    ----------
-    label1 : Label
-        Label of isotopologue 1
-    label2 : Label
-        Label of isotopologue 2
-
-    Returns
-    -------
-    bool
-        True if label 1 is smaller than label 2, otherwise False
-    """
-    shift_label1 = sum(label1.as_dict.values())
-    shift_label2 = sum(label2.as_dict.values())
-
-    return shift_label1 < shift_label2
 
 
 def calc_correction_factor(
@@ -624,12 +620,11 @@ def calc_transition_prob(label1, label2):
     float
         Transition probability
     """
-    if not label_shift_smaller(label1, label2):
+    if label1 >= label2:
         return 0
     difference_labels = label2.subtract(label1)
     if difference_labels.as_series.lt(0).any():
         return 0
-
     return calc_label_diff_prob(label1, difference_labels)
 
 
