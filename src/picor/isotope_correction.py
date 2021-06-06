@@ -79,49 +79,66 @@ def calc_isotopologue_correction(
         subset = raw_data.columns
         if exclude_col:
             subset = list(set(subset) - set(exclude_col))
-    subset = ip.sort_labels(subset)
 
     molecule_info = ip.MoleculeInfo.get_molecule_info(
         molecule_name, molecules_file, molecule_formula, molecule_charge, isotopes_file
     )
-    min_mass_diff = rc.calc_min_mass_diff(
-        molecule_info.calc_isotopologue_mass("No label",),
-        molecule_info.charge,
-        mz_calibration,
-        resolution,
+    subset = ip.LabelTuple(subset, molecule_info)
+    res_corr_info = rc.ResolutionCorrectionInfo(
+        resolution_correction, resolution, mz_calibration, molecule_info
     )
-    if resolution_correction:
-        rc.warn_direct_overlap(
-            subset, molecule_info, min_mass_diff,
-        )
-    data = correct_data(
-        raw_data, subset, molecule_info, resolution_correction, min_mass_diff
-    )
+    if res_corr_info.do_correction:
+        rc.warn_direct_overlap(subset, res_corr_info)
+    data = correct_data(raw_data, subset, res_corr_info)
     return data
 
 
-def correct_data(
-    uncorrected_data, subset, molecule_info, resolution_correction, min_mass_diff
-):
+def correct_data(uncorrected_data, subset, res_corr_info):
     """Correct data based on labels in subset."""
     data = uncorrected_data.copy()
     for label1 in subset:
-        corr = ip.calc_correction_factor(molecule_info, label1,)
+        corr = ip.calc_correction_factor(subset.molecule_info, label1,)
         assert corr >= 1, "Correction factor should be greater or equal 1"
-        data[label1] = corr * data[label1]
-        _logger.info(f"Correction factor {label1}: {corr}")
+        data[label1.as_string] = corr * data[label1.as_string]
+        _logger.info(f"Correction factor {label1.as_string}: {corr}")
         for label2 in subset:
-            if ip.label_shift_smaller(label1, label2):
-                if resolution_correction:
-                    indirect_overlap_prob = rc.calc_indirect_overlap_prob(
-                        label1, label2, molecule_info, min_mass_diff,
-                    )
-                    data[label2] = data[label2] - indirect_overlap_prob * data[label1]
-                    _logger.info(
-                        f"Overlapping prob {label1} -> {label2}: {indirect_overlap_prob}"
-                    )
-                trans_prob = ip.calc_transition_prob(label1, label2, molecule_info,)
-                data[label2] = data[label2] - trans_prob * data[label1]
-                data[label2].clip(lower=0, inplace=True)
-                _logger.info(f"Transition prob {label1} -> {label2}: {trans_prob}")
+            if label1 >= label2:
+                continue
+            trans_prob = calc_transition_prob(label1, label2, res_corr_info)
+            data[label2.as_string] = (
+                data[label2.as_string] - trans_prob * data[label1.as_string]
+            )
+            data[label2.as_string].clip(lower=0, inplace=True)
+            _logger.info(
+                f"Transition prob {label1.as_string} -> {label2.as_string}: {trans_prob}"
+            )
     return data
+
+
+def calc_transition_prob(label1, label2, res_corr_info):
+    """Calculate the probablity between two (un-)labelled isotopologues.
+
+    Parameters
+    ----------
+    label1 : Label
+        Type of isotopic label, e.g. Label("1N15")
+    label2 : Label
+        Type of isotopic label, e.g. Label("10C1301N15")
+    res_corr_info : ResolutionCorrectionInfo
+        Instance with resolution and mz calibration info.
+
+    Returns
+    -------
+    float
+        Transition probability
+    """
+    if label1 >= label2:
+        return 0
+    difference_labels = label2.subtract(label1)
+    if difference_labels.as_series.lt(0).any():
+        return 0
+    if res_corr_info.do_correction:
+        trans_prob = rc.calc_indirect_overlap_prob(label1, label2, res_corr_info)
+    else:  # Without resolution correction
+        trans_prob = ip.calc_label_diff_prob(label1, difference_labels)
+    return trans_prob

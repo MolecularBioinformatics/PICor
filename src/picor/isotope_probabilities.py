@@ -323,6 +323,8 @@ class MoleculeInfo:
 class Label:
     """Class for storing label information."""
 
+    # TODO Add check that label contains only elements of molecule_info
+
     def __init__(self, label, molecule_info):
         """Class contains label in different repressentations (dict, series, str).
 
@@ -452,7 +454,7 @@ class Label:
             .dropna()
             .sum()
         )
-        return mass
+        return float(mass)
 
     @staticmethod
     def generate_label_string(label_as_dict, sep=" "):
@@ -633,29 +635,6 @@ def calc_correction_factor(
         prob[elem] = abundance[elem][0] ** n_atom
     probability = reduce(mul, prob.values())
     return 1 / probability
-
-
-def calc_transition_prob(label1, label2):
-    """Calculate the probablity between two (un-)labelled isotopologues.
-
-    Parameters
-    ----------
-    label1 : Label
-        Type of isotopic label, e.g. Label("1N15")
-    label2 : Label
-        Type of isotopic label, e.g. Label("10C1301N15")
-
-    Returns
-    -------
-    float
-        Transition probability
-    """
-    if label1 >= label2:
-        return 0
-    difference_labels = label2.subtract(label1)
-    if difference_labels.as_series.lt(0).any():
-        return 0
-    return calc_label_diff_prob(label1, difference_labels)
 
 
 def calc_label_diff_prob(label1, difference_labels):

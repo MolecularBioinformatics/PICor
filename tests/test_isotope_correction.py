@@ -6,6 +6,8 @@ import unittest
 import pandas as pd
 
 import picor.isotope_correction as ic
+import picor.isotope_probabilities as ip
+import picor.resolution_correction as rc
 
 __author__ = "Jørn Dietze"
 __copyright__ = "Jørn Dietze"
@@ -107,3 +109,63 @@ class TestIsotopologueCorrection(unittest.TestCase):
                 molecules_file=self.molecules_file,
                 isotopes_file=self.isotopes_file,
             )
+
+
+class TestTransitionProbability(unittest.TestCase):
+    """Calculation of probability between to isotopologues."""
+
+    molecules_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = ip.MoleculeInfo.get_molecule_info(
+        molecule_name="Test4",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
+    res_corr_info = rc.ResolutionCorrectionInfo(False, 60000, 200, molecule_info)
+
+    def test_result_label1_smaller(self):
+        """Result with label1 being smaller than label2."""
+        label1 = ip.Label("2N15", self.molecule_info)
+        label2 = ip.Label("2N152C13", self.molecule_info)
+        res = ic.calc_transition_prob(label1, label2, self.res_corr_info)
+        self.assertAlmostEqual(res, 0.03685030)
+
+    def test_result_label1_equal(self):
+        """Result with label1 being equal to label2."""
+        label1 = ip.Label("1N15", self.molecule_info)
+        res = ic.calc_transition_prob(label1, label1, self.res_corr_info)
+        self.assertEqual(res, 0)
+
+    def test_result_label_missmatch(self):
+        """Result with no possbile transition."""
+        label1 = ip.Label("2N153C13", self.molecule_info)
+        label2 = ip.Label("1N155C13", self.molecule_info)
+        res = ic.calc_transition_prob(label1, label2, self.res_corr_info)
+        self.assertEqual(res, 0)
+
+    def test_result_label1_larger(self):
+        """Result with label1 being larger than label2."""
+        label1 = ip.Label("2N152C13", self.molecule_info)
+        label2 = ip.Label("2N15", self.molecule_info)
+        res = ic.calc_transition_prob(label1, label2, self.res_corr_info)
+        self.assertEqual(res, 0)
+
+    def test_result_molecule_formula(self):
+        """Result with molecule formula."""
+        molecule_info = ip.MoleculeInfo.get_molecule_info(
+            molecule_name="Test1",
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        label1 = ip.Label("1N15", molecule_info)
+        label2 = ip.Label("2N152C13", molecule_info)
+        res = ic.calc_transition_prob(label1, label2, self.res_corr_info)
+        self.assertAlmostEqual(res, 0.00042029)
+
+    def test_wrong_type(self):
+        """Type error with dict as molecule."""
+        label1 = ip.Label("1N15", self.molecule_info)
+        label2 = ip.Label("2N152C13", self.molecule_info)
+        molecule = {"C": 12, "N": 15}
+        with self.assertRaises(TypeError):
+            ic.calc_transition_prob(label1, label2, molecule, self.res_corr_info)
