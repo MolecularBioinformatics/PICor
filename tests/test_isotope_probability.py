@@ -180,12 +180,6 @@ class TestLabels(unittest.TestCase):
         res = label.isotope_to_element(label)
         self.assertEqual(res, res_corr)
 
-    def test_isotope_to_element_bad_element(self):
-        """Raise ValueError for undefined element in isotope label."""
-        label = ip.Label("2O18 3C13 1H02", self.molecule_info)
-        with self.assertRaises(ValueError):
-            label.isotope_to_element(label)
-
     def test_add_result(self):
         """Return correct elements."""
         label1 = ip.Label("1N15 1C13", self.molecule_info)

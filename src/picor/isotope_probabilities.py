@@ -509,17 +509,7 @@ class Label:
     @staticmethod
     def isotope_to_element(label):
         """Change dict key from isotope to element (e.g. H02 -> H)."""
-        atom_label = {}
-        for elem in label.as_dict:
-            if elem == "C13":
-                atom_label["C"] = label.as_dict[elem]
-            elif elem == "N15":
-                atom_label["N"] = label.as_dict[elem]
-            elif elem == "H02":
-                atom_label["H"] = label.as_dict[elem]
-            else:
-                raise ValueError("Only H02, C13 and N15 are allowed as isotopic label")
-        return atom_label
+        return {re.match(r"\D+", elem).group(): n for elem, n in label.as_dict.items()}
 
 
 class LabelTuple(Sequence):
