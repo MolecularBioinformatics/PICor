@@ -367,6 +367,9 @@ class Label:
     def __str__(self):
         return f"Label: {self.as_string}"
 
+    def __bool__(self):
+        return bool(self.as_dict)
+
     def __eq__(self, other):
         if isinstance(other, Label):
             return (
