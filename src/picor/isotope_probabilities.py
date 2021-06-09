@@ -502,14 +502,17 @@ class Label:
 
         if string.lower() == "no label":
             return {}
-        label = re.findall(r"(\d*)([A-Z][a-z]*\d\d)", string)
+        label = re.findall(r"(\d*)([A-Z][a-z]?\d\d)", string)
         label_dict = {elem: int(num) if num != "" else 1 for num, elem in label}
         return label_dict
 
     @staticmethod
     def isotope_to_element(label):
         """Change dict key from isotope to element (e.g. H02 -> H)."""
-        return {re.match(r"\D+", elem).group(): n for elem, n in label.as_dict.items()}
+        return {
+            re.match(r"[A-Z][a-z]?", elem).group(): n
+            for elem, n in label.as_dict.items()
+        }
 
 
 class LabelTuple(Sequence):
@@ -559,7 +562,7 @@ def parse_formula(string):
         Elements as keys
         Number as values
     """
-    elements = re.findall(r"([A-Z][a-z]*)(\d*)", string)
+    elements = re.findall(r"([A-Z][a-z]?)(\d*)", string)
     return {elem: int(num) if num != "" else 1 for elem, num in elements}
 
 
