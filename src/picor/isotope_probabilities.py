@@ -633,28 +633,31 @@ def calc_correction_factor(
     return 1 / probability
 
 
-def calc_label_diff_prob(label1, difference_labels):
+def calc_label_diff_prob(label, difference_label):
     """Calculate the transition probablity of difference in labelled atoms.
 
     Parameters
     ----------
-    label1 : Label
+    label : Label
         Type of isotopic label, e.g. Label("1N15")
-    difference_labels : pd.Series
-        Isotope symbol (e.g. N15) as key and number of atoms as value
+    difference_label : Label
+        Type of isotopic label, e.g. Label("1N15")
+
     Returns
     -------
     float
         Transition probability
     """
     # TODO currently only works without O17 isotope
-    n_atoms = label1.molecule_info.formula
-    abundance = label1.molecule_info.isotopes.abundance
+    if not difference_label:
+        return 0
+    n_atoms = label.molecule_info.formula
+    abundance = label.molecule_info.isotopes.abundance
 
     prob = []
-    for isotope, n_label in difference_labels.as_series.items():
+    for isotope, n_label in difference_label.as_series.items():
         # get number of atoms of isotope, default to 0
-        n_elem_1 = label1.as_dict.get(isotope, 0)
+        n_elem_1 = label.as_dict.get(isotope, 0)
         # TODO redo this part to get rid of re
         elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
 

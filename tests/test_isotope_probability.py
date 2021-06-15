@@ -542,3 +542,29 @@ class TestCorrectionFactor(unittest.TestCase):
             ip.calc_correction_factor(
                 self.molecule_info, label=ip.Label("100C131N15", self.molecule_info),
             )
+
+
+class TestDiffProb(unittest.TestCase):
+    """Calculation of difference probability."""
+
+    molecules_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = ip.MoleculeInfo.get_molecule_info(
+        molecule_name="Test1",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
+
+    def test_result_empty_diff_label(self):
+        """Result with empty diff label."""
+        label = ip.Label("1C13", self.molecule_info)
+        diff_label = ip.Label({}, self.molecule_info)
+        res = ip.calc_label_diff_prob(label, diff_label)
+        self.assertEqual(res, 0)
+
+    def test_result_simple_diff_label(self):
+        """Result with simple one atom diff label."""
+        label = ip.Label("1C13", self.molecule_info)
+        diff_label = ip.Label("1C13", self.molecule_info)
+        res = ip.calc_label_diff_prob(label, diff_label)
+        self.assertAlmostEqual(res, 0.1744399)
