@@ -568,3 +568,10 @@ class TestDiffProb(unittest.TestCase):
         diff_label = ip.Label("1C13", self.molecule_info)
         res = ip.calc_label_diff_prob(label, diff_label)
         self.assertAlmostEqual(res, 0.1744399)
+
+    def test_result_complex_diff_label(self):
+        """Result with diff label containing multiple atoms."""
+        label = ip.Label("1C13", self.molecule_info)
+        diff_label = ip.Label("1C13 1N15", self.molecule_info)
+        res = ip.calc_label_diff_prob(label, diff_label)
+        self.assertAlmostEqual(res, 0.0043485)

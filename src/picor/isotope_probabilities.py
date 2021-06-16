@@ -348,12 +348,12 @@ class Label:
             self.as_dict = self.parse_label(label)
             self.as_series = pd.Series(self.as_dict, dtype="int64")
         elif isinstance(label, dict):
-            self.as_dict = label
+            self.as_dict = {ele: n for ele, n in label.items() if n}
             self.as_series = pd.Series(self.as_dict, dtype="int64")
             self.as_string = self.generate_label_string(self.as_dict)
         elif isinstance(label, pd.Series):
-            self.as_series = label.astype("int64")
-            self.as_dict = dict(label)
+            self.as_series = label[label > 0].astype("int64")
+            self.as_dict = dict(self.as_series)
             self.as_string = self.generate_label_string(self.as_dict)
         else:
             raise TypeError("label has to be str, dict or pandas Series")
@@ -506,7 +506,12 @@ class Label:
         if string.lower() == "no label":
             return {}
         label = re.findall(r"(\d*)([A-Z][a-z]?\d\d)", string)
-        label_dict = {elem: int(num) if num != "" else 1 for num, elem in label}
+        label_dict = {}
+        for num, elem in label:
+            if num == "":
+                label_dict[elem] = 1
+            elif int(num) > 0:
+                label_dict[elem] = int(num)
         return label_dict
 
     @staticmethod
@@ -664,8 +669,6 @@ def calc_label_diff_prob(label, difference_label):
         n_unlab = n_atoms[elem] - n_elem_1 - n_label
         abun_unlab = abundance[elem][0]
         abun_lab = abundance[elem][1]
-        if n_label == 0:
-            continue
 
         trans_pr = binom((n_atoms[elem] - n_elem_1), n_label)
         trans_pr *= abun_lab ** n_label
