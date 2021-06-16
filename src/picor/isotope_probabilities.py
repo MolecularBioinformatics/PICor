@@ -122,6 +122,29 @@ class IsotopeInfo:
         """Get list of all isotopes."""
         return list(self.isotope_mass_series.keys())
 
+    @staticmethod
+    def get_element_from_isotope(isotope):
+        """Return element based on isotope."""
+        return re.match(r"[A-Z][a-z]?", isotope).group()
+
+    def get_lightest_isotope_from_element(self, element):
+        """Return lightest isotpe based on element, e.g. 'C12' from 'C'."""
+        iso_data = pd.read_csv(
+            self.isotopes_file,
+            sep="\t",
+            index_col="element",
+            usecols=["element", "isotope"],
+            squeeze=True,
+        )
+        iso_data = iso_data.groupby("element").min()
+        return iso_data[element]
+
+    def get_lightest_isotope_from_isotope(self, isotope):
+        """Return lightest isotope of element for given isotope."""
+        return self.get_lightest_isotope_from_element(
+            self.get_element_from_isotope(isotope)
+        )
+
 
 class MoleculeInfo:
     """Class containing molecule data."""
@@ -309,11 +332,30 @@ class MoleculeInfo:
 
     @staticmethod
     def subtract_label(molecule_series, label):
-        """Subtract label atoms from molecule formula."""
+        """Subtract label atoms from molecule formula.
+
+        Parameters
+        ----------
+        molecule_series : Series
+            Formula as Series with isotopes as index
+        label : Label
+            Type of isotopic label, e.g. Label("1N15")
+
+        Returns
+        -------
+        Series
+            Formula with isotopes as index
+
+        Raises
+        ------
+        ValueError
+            If too many atoms are subtracted and negative number of atoms is reached
+        """
         formula_difference = molecule_series.copy()
-        iso_dict = {"H02": "H01", "C13": "C12", "N15": "N14", "O18": "O16"}
         for heavy in label.as_series.keys():
-            light = iso_dict[heavy]
+            light = label.molecule_info.isotopes.get_lightest_isotope_from_isotope(
+                heavy
+            )
             formula_difference[light] = molecule_series[light] - label.as_series[heavy]
             if any(formula_difference < 0):
                 raise ValueError("Too many labelled atoms")
