@@ -6,6 +6,7 @@ Functions:
     warn_indirect_overlap: warn if overlap due to H02 or C13 incorporation
 """
 import itertools
+import logging
 import warnings
 
 import pandas as pd
@@ -15,6 +16,8 @@ from picor.isotope_probabilities import calc_label_diff_prob, Label
 __author__ = "Jørn Dietze"
 __copyright__ = "Jørn Dietze"
 __license__ = "gpl3"
+
+_logger = logging.getLogger(__name__)
 
 
 class ResolutionCorrectionInfo:
@@ -124,9 +127,9 @@ def warn_indirect_overlap(label_list, res_corr_info):
     for label1, label2 in itertools.permutations(label_list, 2):
         prob = calc_indirect_overlap_prob(label1, label2, res_corr_info)
         if prob:
-            warnings.warn(
-                f"{label1} indirect overlap with {label2} with prob {prob:.4f}"
-            )
+            warning = f"{label1} indirect overlap with {label2} with prob {prob:.4f}"
+            warnings.warn(warning)
+            _logger.warning(warning)
 
 
 def calc_indirect_overlap_prob(label1, label2, res_corr_info):
@@ -148,6 +151,7 @@ def calc_indirect_overlap_prob(label1, label2, res_corr_info):
     float
         Transition probability of overlap
     """
+    _logger.info(f"Indirect overlap prob for {label1} -> {label2}")
     # Label overlap possible with additional atoms
     coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
     if coarse_mass_difference <= 0:
@@ -159,8 +163,11 @@ def calc_indirect_overlap_prob(label1, label2, res_corr_info):
     ):
         label1_mod = label1.add(label_trans)
         if is_isotologue_overlap(label1_mod, label2, res_corr_info):
-            probs.append(calc_label_diff_prob(label1, label_trans))
+            prob = calc_label_diff_prob(label1, label_trans)
+            _logger.info(f"For trans label {label_trans}: {prob}")
+            probs.append(prob)
     prob_total = sum(probs)
+    _logger.info(f"total indirect prob: {prob_total}\n")
     return prob_total
 
 
@@ -179,4 +186,6 @@ def warn_direct_overlap(label_list, res_corr_info):
     for label1, label2 in itertools.permutations(label_list, 2):
         # Direct label overlap
         if is_isotologue_overlap(label1, label2, res_corr_info):
-            warnings.warn(f"Direct overlap of {label1} and {label2}")
+            warning = f"Direct overlap of {label1} and {label2}"
+            warnings.warn(warning)
+            _logger.warning(warning)
