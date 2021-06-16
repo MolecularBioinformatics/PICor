@@ -135,8 +135,6 @@ def calc_transition_prob(label1, label2, res_corr_info):
     if label1 >= label2:
         return 0
     difference_labels = label2.subtract(label1)
-    if difference_labels.as_series.lt(0).any():
-        return 0
     if res_corr_info.do_correction:
         trans_prob = rc.calc_indirect_overlap_prob(label1, label2, res_corr_info)
     else:  # Without resolution correction

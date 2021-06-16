@@ -394,7 +394,7 @@ class Label:
             self.as_series = pd.Series(self.as_dict, dtype="int64")
             self.as_string = self.generate_label_string(self.as_dict)
         elif isinstance(label, pd.Series):
-            self.as_series = label[label > 0].astype("int64")
+            self.as_series = label[label != 0].astype("int64")
             self.as_dict = dict(self.as_series)
             self.as_string = self.generate_label_string(self.as_dict)
         else:
@@ -697,6 +697,10 @@ def calc_label_diff_prob(label, difference_label):
     """
     # TODO currently only works without O17 isotope
     if not difference_label:
+        return 0
+
+    # No classical transition possible with negative values
+    if difference_label.as_series.lt(0).any():
         return 0
     n_atoms = label.molecule_info.formula
     abundance = label.molecule_info.isotopes.abundance
