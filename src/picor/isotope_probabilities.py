@@ -33,6 +33,7 @@ class IsotopeInfo:
         self.abundance = self.get_isotope_abundance(isotopes_file)
         self.isotope_mass_series = self.get_isotope_mass_series(isotopes_file)
         self.isotope_shift = self.get_shift(isotopes_file)
+        self.elements = self.get_elements(isotopes_file)
 
     def __repr__(self):
         return f"IsotopeInfo('{self.isotopes_file}')"
@@ -59,14 +60,14 @@ class IsotopeInfo:
         dict
             Abundance of isotope.
         """
-        isotopes = pd.read_csv(isotopes_file, sep="\t")
-        isotopes.set_index("element", drop=True, inplace=True)
+        abundance = pd.read_csv(
+            isotopes_file,
+            sep="\t",
+            usecols=["abundance", "isotope"],
+            index_col="isotope",
+            squeeze=True,
+        )
 
-        abundance = {}
-        for elem in isotopes.itertuples():
-            if elem.Index not in abundance:
-                abundance[elem.Index] = []
-            abundance[elem.Index].append(elem.abundance)
         return abundance
 
     @staticmethod
@@ -106,6 +107,14 @@ class IsotopeInfo:
             .droplevel(0)
         )
         return iso_data["shift"].astype("int64")
+
+    @staticmethod
+    def get_elements(isotopes_file):
+        """Get set of elements in isotopes_file."""
+        elements = pd.read_csv(
+            isotopes_file, sep="\t", usecols=["element"], squeeze=True,
+        )
+        return set(elements)
 
     def get_isotopes_from_elements(self, element_list):
         """Get list of isotopes based on elements."""
@@ -283,7 +292,7 @@ class MoleculeInfo:
             raise KeyError(
                 f"Molecule {error} couldn't be found in molecules file"
             ) from error
-        if not all(element in isotopes.abundance for element in n_atoms):
+        if not all(element in isotopes.elements for element in n_atoms):
             raise ValueError("Unknown element in molecule")
         return n_atoms
 
@@ -675,7 +684,9 @@ def calc_correction_factor(
         )
         if n_atom < 0:
             raise ValueError("Too many labelled atoms")
-        prob[elem] = abundance[elem][0] ** n_atom
+
+        isotope = molecule_info.isotopes.get_lightest_isotope_from_element(elem)
+        prob[elem] = abundance[isotope] ** n_atom
     probability = reduce(mul, prob.values())
     return 1 / probability
 
@@ -695,7 +706,6 @@ def calc_label_diff_prob(label, difference_label):
     float
         Transition probability
     """
-    # TODO currently only works without O17 isotope
     if not difference_label:
         return 0
 
@@ -706,18 +716,21 @@ def calc_label_diff_prob(label, difference_label):
     abundance = label.molecule_info.isotopes.abundance
 
     prob = []
-    for isotope, n_label in difference_label.as_series.items():
+    for isotope_lab, n_diff_label in difference_label.as_series.items():
+        # breakpoint()
         # get number of atoms of isotope, default to 0
-        n_elem_1 = label.as_dict.get(isotope, 0)
-        # TODO redo this part to get rid of re
-        elem = re.search(r"[A-Z][a-z]?", isotope).group(0)
+        elem = label.molecule_info.isotopes.get_element_from_isotope(isotope_lab)
+        isotope_unlab = label.molecule_info.isotopes.get_lightest_isotope_from_isotope(
+            isotope_lab
+        )
 
-        n_unlab = n_atoms[elem] - n_elem_1 - n_label
-        abun_unlab = abundance[elem][0]
-        abun_lab = abundance[elem][1]
+        n_label = label.as_dict.get(isotope_lab, 0)
+        n_unlab = n_atoms[elem] - n_label - n_diff_label
+        abun_lab = abundance[isotope_lab]
+        abun_unlab = abundance[isotope_unlab]
 
-        trans_pr = binom((n_atoms[elem] - n_elem_1), n_label)
-        trans_pr *= abun_lab ** n_label
+        trans_pr = binom((n_atoms[elem] - n_label), n_diff_label)
+        trans_pr *= abun_lab ** n_diff_label
         trans_pr *= abun_unlab ** n_unlab
         prob.append(trans_pr)
 

@@ -189,7 +189,7 @@ class TestTransitionProbability(unittest.TestCase):
             True, 60000, 200, self.molecule_info2
         )
         res = ic.calc_transition_prob(label1, label2, res_corr_info)
-        self.assertAlmostEqual(res, 0.1742837)
+        self.assertAlmostEqual(res, 0.1794381)
 
     def test_result_label1_larger(self):
         """Result with label1 being larger than label2."""

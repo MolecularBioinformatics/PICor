@@ -306,7 +306,7 @@ class TestIsotopeInfo(unittest.TestCase):
     def test_init_attributes_type(self):
         """Type of instance attributes."""
         instance = ip.IsotopeInfo(self.isotopes_file)
-        self.assertIsInstance(instance.abundance, dict)
+        self.assertIsInstance(instance.abundance, pandas.Series)
         self.assertIsInstance(instance.isotopes_file, Path)
         self.assertIsInstance(instance.isotope_mass_series, pandas.Series)
 
@@ -332,10 +332,30 @@ class TestIsotopeInfo(unittest.TestCase):
     def test_get_isotope_abundance_result(self):
         """Return correct data."""
         res = ip.IsotopeInfo.get_isotope_abundance(self.isotopes_file)
+        res_corr = [
+            "H01",
+            "H02",
+            "C12",
+            "C13",
+            "N14",
+            "N15",
+            "O16",
+            "O17",
+            "O18",
+            "Si28",
+            "Si29",
+            "Si30",
+            "P31",
+            "S32",
+            "S33",
+            "S34",
+            "S35",
+            "S36",
+        ]
         self.assertListEqual(
-            ["H", "C", "N", "O", "Si", "P", "S"], list(res.keys()),
+            res_corr, list(res.index),
         )
-        self.assertListEqual(res["C"], [0.9893, 0.0107])
+        self.assertEqual(res["C12"], 0.9893)
 
     def test_get_isotope_mass_series_keys(self):
         """Return correct Series keys."""
@@ -355,12 +375,17 @@ class TestIsotopeInfo(unittest.TestCase):
         self.assertEqual("isotope", res.keys().name)
         self.assertEqual("mass", res.name)
 
+    def test_get_elements(self):
+        """Return correct list of elements."""
+        res = ip.IsotopeInfo.get_elements(self.isotopes_file)
+        self.assertSetEqual({"H", "C", "O", "N", "Si", "S", "P"}, res)
+
     def test_get_isotopes_from_elements(self):
         """Correct list of isotopes."""
         iso = ip.IsotopeInfo(self.isotopes_file)
         ele = ["C", "O", "H"]
         res = iso.get_isotopes_from_elements(ele)
-        res_corr = ["C12", "C13", "O16", "O18", "H01", "H02"]
+        res_corr = ["C12", "C13", "O16", "O17", "O18", "H01", "H02"]
         self.assertListEqual(res, res_corr)
 
 
@@ -516,7 +541,18 @@ class TestMoleculeInfo(unittest.TestCase):
             isotopes_file=self.isotopes_file,
         )
         res = molecule.get_isotopes()
-        res_corr = ["C12", "C13", "H01", "H02", "N14", "N15", "O16", "O18", "P31"]
+        res_corr = [
+            "C12",
+            "C13",
+            "H01",
+            "H02",
+            "N14",
+            "N15",
+            "O16",
+            "O17",
+            "O18",
+            "P31",
+        ]
         self.assertListEqual(res, res_corr)
 
 
