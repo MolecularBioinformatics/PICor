@@ -2,6 +2,15 @@
 Changelog
 =========
 
+Version 0.6.0
+=============
+
+- Change calc_isotopologue_correction interface. Either molecule name or
+  molecule formula or charge is now acceptable
+- Fix resolution correction
+- Resolution correction now corrects for all isotopes in molecule
+- All isotopes specified in isotopes_file are now allowed as label
+
 Version 0.5.0
 =============
 
