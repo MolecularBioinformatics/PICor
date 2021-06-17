@@ -55,7 +55,7 @@ raw_data = pd.DataFrame(
 )
 corr_data = picor.calc_isotopologue_correction(
     raw_data,
-    "NAD",
+    molecule_name="NAD",
     exclude_col=["dummy column str"],
 )
 print(corr_data)
@@ -65,6 +65,12 @@ In case the DataFrame contains columns (except the index colum) with other data 
 
 You can activate a resolution depent correction by setting  `resolution_correction` to `True`. Specify the resolution and the reference m/z ratio with `resolution` and `mz_calibration`.
 
+
+## Molecule Specification
+The molecule to be corrected can either be specified by name (`molecule_name`) or by formula and charge (`molecule_formula` and `molecule_charge`).
+If a name is used it has to be specified in the file specified by `molecules_file` (file path). 
+
+The molecule file has to be tab-separated with the columns `name`, `formula` and `charge`. The column labels have to match exactly. Look at the example file ìn `src/picor/metabolites.csv`.
 
 ## Input Data
 Using the command line interface `picor` both excel (`.xlsx`) and comma-separated data (`.csv`) can be corrected.
@@ -88,7 +94,6 @@ Additional columns with for example more information about the samples have to b
 
 The isotopologues or labels are specified as string in the table header (first line).
 Labels can include either one or multiple isotopes or 'No label'.
-Currently supported are 'H02' (deuterium), 'C13' and 'N15'.
 The number of labeled atoms of each isotope has to be specified before the element, e.g. '3H02 2C13' for three deuterium and two 13-C atoms.
 Spaces and underscores are allowed but not necessary in the label definition.
 
