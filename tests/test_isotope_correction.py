@@ -24,6 +24,17 @@ class TestIsotopologueCorrection(unittest.TestCase):
         """Result with default values."""
         data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
         data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
+        molecule_name = "NAD"
+        res = ic.calc_isotopologue_correction(data, molecule_name,)
+        data_corrected = pd.read_csv(
+            Path("tests/test_dataset_corrected.csv"), index_col=0
+        )
+        pd.testing.assert_frame_equal(data_corrected, res)
+
+    def test_result_files(self):
+        """Result with given molecule and isotopes file paths."""
+        data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
+        data.drop(columns=["dummy column int", "dummy column str"], inplace=True)
         molecule_name = "Test1"
         res = ic.calc_isotopologue_correction(
             data,
@@ -45,6 +56,25 @@ class TestIsotopologueCorrection(unittest.TestCase):
             data,
             molecule_name,
             subset=subset,
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        assert res.shape == data.shape
+        res.drop(columns=["dummy column int", "dummy column str"], inplace=True)
+        data_corrected = pd.read_csv(
+            Path("tests/test_dataset_corrected.csv"), index_col=0
+        )
+        pd.testing.assert_frame_equal(data_corrected, res)
+
+    def test_result_exclude_col(self):
+        """Result with exclude_col parameter."""
+        data = pd.read_csv(Path("tests/test_dataset.csv"), index_col=0)
+        exclude_col = ["dummy column int", "dummy column str"]
+        molecule_name = "Test1"
+        res = ic.calc_isotopologue_correction(
+            data,
+            molecule_name,
+            exclude_col=exclude_col,
             molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
@@ -82,7 +112,7 @@ class TestIsotopologueCorrection(unittest.TestCase):
             data,
             molecule_name,
             resolution_correction=True,
-            resolution=1e6,
+            resolution=1e8,
             molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
@@ -93,7 +123,7 @@ class TestIsotopologueCorrection(unittest.TestCase):
             molecules_file=self.molecules_file,
             isotopes_file=self.isotopes_file,
         )
-        pd.testing.assert_frame_equal(res_wo_cor, res_w_cor)
+        pd.testing.assert_frame_equal(res_wo_cor, res_w_cor, rtol=1e-4)
 
     def test_resolution_warning(self):
         """Warn when overlapping isotopologues."""
@@ -121,6 +151,11 @@ class TestTransitionProbability(unittest.TestCase):
         molecules_file=molecules_file,
         isotopes_file=isotopes_file,
     )
+    molecule_info2 = ip.MoleculeInfo.get_molecule_info(
+        molecule_name="Test1",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
     res_corr_info = rc.ResolutionCorrectionInfo(False, 60000, 200, molecule_info)
 
     def test_result_label1_smaller(self):
@@ -136,12 +171,25 @@ class TestTransitionProbability(unittest.TestCase):
         res = ic.calc_transition_prob(label1, label1, self.res_corr_info)
         self.assertEqual(res, 0)
 
-    def test_result_label_missmatch(self):
-        """Result with no possbile transition."""
-        label1 = ip.Label("2N153C13", self.molecule_info)
-        label2 = ip.Label("1N155C13", self.molecule_info)
-        res = ic.calc_transition_prob(label1, label2, self.res_corr_info)
+    def test_result_label_missmatch_without_res_corr(self):
+        """Zero result with no possible transition without res_corr."""
+        label1 = ip.Label("2N15 4C13", self.molecule_info2)
+        label2 = ip.Label("1N15 6C13", self.molecule_info2)
+        res_corr_info = rc.ResolutionCorrectionInfo(
+            False, 60000, 200, self.molecule_info2
+        )
+        res = ic.calc_transition_prob(label1, label2, res_corr_info)
         self.assertEqual(res, 0)
+
+    def test_result_label_missmatch_with_res_corr(self):
+        """Possible result for missmatch with resolution correction."""
+        label1 = ip.Label("2N15 4C13", self.molecule_info2)
+        label2 = ip.Label("1N15 6C13", self.molecule_info2)
+        res_corr_info = rc.ResolutionCorrectionInfo(
+            True, 60000, 200, self.molecule_info2
+        )
+        res = ic.calc_transition_prob(label1, label2, res_corr_info)
+        self.assertAlmostEqual(res, 0.1742837)
 
     def test_result_label1_larger(self):
         """Result with label1 being larger than label2."""

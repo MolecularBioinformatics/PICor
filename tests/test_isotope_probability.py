@@ -122,6 +122,13 @@ class TestLabels(unittest.TestCase):
         with self.assertRaises(TypeError):
             ip.Label(data, self.molecule_info)
 
+    def test_parse_label_zero_value(self):
+        """Parse_label removes zero value elements."""
+        string = "3C13 0N15 1H02"
+        res_corr = {"C13": 3, "H02": 1}
+        res = ip.Label.parse_label(string)
+        self.assertEqual(res, res_corr)
+
     def test_parse_label_bad_type(self):
         """Parse_label raises TypeError for wrong Type."""
         bad_type_list = [["C13"], {"C13": 2}, 2]
@@ -559,6 +566,13 @@ class TestDiffProb(unittest.TestCase):
         """Result with empty diff label."""
         label = ip.Label("1C13", self.molecule_info)
         diff_label = ip.Label({}, self.molecule_info)
+        res = ip.calc_label_diff_prob(label, diff_label)
+        self.assertEqual(res, 0)
+
+    def test_result_negative_diff_label(self):
+        """Result with negative diff label."""
+        label = ip.Label("1C13", self.molecule_info)
+        diff_label = ip.Label({"C13": -1, "N15": 1}, self.molecule_info)
         res = ip.calc_label_diff_prob(label, diff_label)
         self.assertEqual(res, 0)
 
