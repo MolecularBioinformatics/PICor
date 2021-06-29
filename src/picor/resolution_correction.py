@@ -32,6 +32,8 @@ class ResolutionCorrectionInfo:
         self.min_mass_diff = self.calc_min_mass_diff(
             self.molecule_mass, molecule_info.charge, mz_calibration, resolution,
         )
+        # TODO Replace hardcoded  indirect_overlap_cutoff with flexible approach
+        self.indirect_overlap_cutoff = 5
 
     def __repr__(self):
         return (
@@ -154,29 +156,34 @@ def calc_indirect_overlap_prob(label1, label2, res_corr_info):
     _logger.info(f"Indirect overlap prob for {label1} -> {label2}")
     # Label overlap possible with additional atoms
     coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
-    if coarse_mass_difference <= 0:
+    if (
+        0 >= coarse_mass_difference
+        or coarse_mass_difference >= res_corr_info.indirect_overlap_cutoff
+    ):
         return 0
 
     probs = []
-    for label_trans in generate_labels(
-        coarse_mass_difference, res_corr_info.molecule_info
-    ):
+    for label_trans in generate_labels(coarse_mass_difference, res_corr_info):
         label1_mod = label1.add(label_trans)
         if is_isotologue_overlap(label1_mod, label2, res_corr_info):
             prob = calc_label_diff_prob(label1, label_trans)
-            _logger.info(f"For trans label {label_trans}: {prob}")
+            _logger.debug(f"For trans label {label_trans}: {prob}")
             probs.append(prob)
     prob_total = sum(probs)
     _logger.info(f"total indirect prob: {prob_total}\n")
     return prob_total
 
 
-def generate_labels(mass_diff, molecule_info):
-    """Return combinations of H02, C13 and O18 for given mass diff."""
+def generate_labels(mass_diff, res_corr_info):
+    """Return combinations of possible isotopes e.g. H02 and C13 for given mass diff."""
+    molecule_info = res_corr_info.molecule_info
     shift = molecule_info.isotopes.isotope_shift[molecule_info.get_isotopes()]
     isotopes = shift[shift > 0].index  # only use isotope that cause mass shift
     for comb in itertools.product(range(0, mass_diff + 1), repeat=len(isotopes)):
-        label = Label(pd.Series(comb, index=isotopes), molecule_info)
+        try:
+            label = Label(pd.Series(comb, index=isotopes), molecule_info)
+        except ValueError:
+            continue
         if label.get_coarse_mass_shift() == mass_diff:
             yield label
 
