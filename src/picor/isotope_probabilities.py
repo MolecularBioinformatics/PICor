@@ -411,6 +411,7 @@ class Label:
         self.molecule_info = molecule_info
         self.mass = self.get_coarse_mass_shift()  # Coarse mass of label alone
         self.check_isotopes()
+        self.check_number_atoms()
 
     def __repr__(self):
         return f"Label({self.as_dict}, {self.molecule_info})"
@@ -446,6 +447,13 @@ class Label:
         for iso in self.as_dict.keys():
             if iso not in self.molecule_info.isotopes.get_isotopes():
                 raise ValueError(f"Label atom {iso} not in isotopes file")
+
+    def check_number_atoms(self):
+        """Raise ValueError if number of atoms in label is greater than molecule."""
+        for iso, num in self.as_dict.items():
+            elem = self.molecule_info.isotopes.get_element_from_isotope(iso)
+            if num > self.molecule_info.formula[elem]:
+                raise ValueError("Too many atoms in label.")
 
     def subtract(self, other):
         """Return difference between two labels as new Label instance.
