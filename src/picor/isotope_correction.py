@@ -4,6 +4,7 @@ Functions:
     calc_isotopologue_correction: Correct DataFrame with measurements.
 """
 import logging
+import os
 from pathlib import Path
 
 import picor.isotope_probabilities as ip
@@ -14,6 +15,7 @@ __copyright__ = "Jørn Dietze"
 __license__ = "gpl3"
 
 _logger = logging.getLogger(__name__)
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "WARNING"))
 
 
 def calc_isotopologue_correction(
