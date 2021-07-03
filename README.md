@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/Danzelot/PICor.svg?branch=master)](https://travis-ci.com/Danzelot/PICor)
+
 # PICor: Statistical Isotope Correction
 
 PICor is a python package for correcting mass spectrometry data for the effect of natural isotope abundance.
