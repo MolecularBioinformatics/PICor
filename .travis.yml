@@ -9,9 +9,9 @@ python:
     - "3.9"
     - "nightly"
 
-matrix:
-    allow_failures:
-        - python: "nightly"
+# matrix:
+#     allow_failures:
+#         - python: "nightly"
 
 install:
     - pip install pipenv --upgrade-strategy=only-if-needed
@@ -19,3 +19,5 @@ install:
 
 script:
     - pytest --cov
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
