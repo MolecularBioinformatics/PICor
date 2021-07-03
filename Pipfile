@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+docopt = "*"
+pandas = "*"
+scipy = "*"
+picor = {editable = true, path = "."}
+
+[dev-packages]
+black = "*"
+coverage = "*"
+flake8 = "*"
+ipython = "*"
+pdbpp = "*"
+pylint = "*"
+pyscaffold = "*"
+pytest = "*"
+pytest-cov = "*"
+
+[requires]
+python_version = "3.6"
+
+[pipenv]
+allow_prereleases = true
