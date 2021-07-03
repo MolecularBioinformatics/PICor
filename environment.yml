@@ -1,4 +1,4 @@
-name: icor
+name: picor
 channels:
   - conda-forge
   - defaults
