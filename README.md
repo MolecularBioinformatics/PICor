@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.com/Danzelot/PICor.svg?branch=master)](https://travis-ci.com/Danzelot/PICor)
-[![codecov](https://codecov.io/gh/Danzelot/PICor/branch/master/graph/badge.svg?token=TIPO8R4P4W)](https://codecov.io/gh/Danzelot/PICor)
-[![CodeFactor](https://www.codefactor.io/repository/github/danzelot/picor/badge/master)](https://www.codefactor.io/repository/github/danzelot/picor/overview/master)
+[![Build Status](https://travis-ci.com/MolecularBioinformatics/PICor.svg?branch=master)](https://travis-ci.com/MolecularBioinformatics/PICor)
+[![codecov](https://codecov.io/gh/MolecularBioinformatics/PICor/branch/master/graph/badge.svg?token=DZIP4BMO3K)](https://codecov.io/gh/MolecularBioinformatics/PICor)
+[![CodeFactor](https://www.codefactor.io/repository/github/molecularbioinformatics/picor/badge)](https://www.codefactor.io/repository/github/molecularbioinformatics/picor)
 
 # PICor: Statistical Isotope Correction
 
