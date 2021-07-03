@@ -109,6 +109,16 @@ class TestLabels(unittest.TestCase):
         res = ip.Label(data, self.molecule_info)
         self.assertEqual(res.as_dict, res_corr)
 
+    def test_label_wrong_atoms(self):
+        """ValueError for atom not in molecule."""
+        with self.assertRaises(ValueError):
+            ip.Label("S33", self.molecule_info)
+
+    def test_label_too_many_atoms(self):
+        """ValueError for too many atoms in label."""
+        with self.assertRaises(ValueError):
+            ip.Label("55C13", self.molecule_info)
+
     def test_label_no_label(self):
         """Parse_label parses 'No label' string correctly."""
         data = "No label"
@@ -264,12 +274,6 @@ class TestLabels(unittest.TestCase):
         label = ip.Label("15C13", self.molecule_info)
         res = label.calc_isotopologue_mass()
         self.assertAlmostEqual(res, 679.167270, places=5)
-
-    def test_mass_bad_label(self):
-        """ValueError for Molecule mass calculation with too large label."""
-        label = ip.Label("55C13", self.molecule_info)
-        with self.assertRaises(ValueError):
-            label.calc_isotopologue_mass()
 
 
 class TestLabelTuple(unittest.TestCase):

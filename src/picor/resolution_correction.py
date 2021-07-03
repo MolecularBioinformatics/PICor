@@ -157,7 +157,7 @@ def calc_indirect_overlap_prob(label1, label2, res_corr_info):
     # Label overlap possible with additional atoms
     coarse_mass_difference = calc_coarse_mass_difference(label1, label2)
     if (
-        0 >= coarse_mass_difference
+        coarse_mass_difference <= 0
         or coarse_mass_difference >= res_corr_info.indirect_overlap_cutoff
     ):
         return 0

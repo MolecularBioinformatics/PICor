@@ -366,15 +366,11 @@ class MoleculeInfo:
                 heavy
             )
             formula_difference[light] = molecule_series[light] - label.as_series[heavy]
-            if any(formula_difference < 0):
-                raise ValueError("Too many labelled atoms")
         return formula_difference
 
 
 class Label:
     """Class for storing label information."""
-
-    # TODO Add check that label contains only elements of molecule_info
 
     def __init__(self, label, molecule_info):
         """Class contains label in different repressentations (dict, series, str).
@@ -452,8 +448,11 @@ class Label:
         """Raise ValueError if number of atoms in label is greater than molecule."""
         for iso, num in self.as_dict.items():
             elem = self.molecule_info.isotopes.get_element_from_isotope(iso)
-            if num > self.molecule_info.formula[elem]:
-                raise ValueError("Too many atoms in label.")
+            try:
+                if num > self.molecule_info.formula[elem]:
+                    raise ValueError("Too many atoms in label.")
+            except KeyError as err:
+                raise ValueError("Label contains atoms not in molecule.") from err
 
     def subtract(self, other):
         """Return difference between two labels as new Label instance.
@@ -690,9 +689,6 @@ def calc_correction_factor(
         n_atom = (
             n_atoms[elem] - atom_label[elem] if elem in atom_label else n_atoms[elem]
         )
-        if n_atom < 0:
-            raise ValueError("Too many labelled atoms")
-
         isotope = molecule_info.isotopes.get_lightest_isotope_from_element(elem)
         prob[elem] = abundance[isotope] ** n_atom
     probability = reduce(mul, prob.values())

@@ -112,6 +112,52 @@ class TestMassCalculations(unittest.TestCase):
                     rc.ResolutionCorrectionInfo.fwhm(mz_cal, mz, resolution)
 
 
+class TestGenerateLabels(unittest.TestCase):
+    """generate_labels."""
+
+    molecules_file = Path("tests/test_metabolites.csv")
+    isotopes_file = Path("tests/test_isotopes.csv")
+    molecule_info = MoleculeInfo.get_molecule_info(
+        molecule_name="Test1",
+        molecules_file=molecules_file,
+        isotopes_file=isotopes_file,
+    )
+    res_corr_info = rc.ResolutionCorrectionInfo(False, 60000, 200, molecule_info)
+
+    def test_generate_labels_res(self):
+        """Return correct result fo rsmall example."""
+        res = list(rc.generate_labels(2, self.res_corr_info))
+        res_corr = [
+            Label(la, self.molecule_info)
+            for la in [
+                "1O18",
+                "2O17",
+                "1N151O17",
+                "2N15",
+                "1H021O17",
+                "1H021N15",
+                "2H02",
+                "1C131O17",
+                "1C131N15",
+                "1C131H02",
+                "2C13",
+            ]
+        ]
+        self.assertListEqual(res, res_corr)
+
+    def test_generate_labels_error(self):
+        """Catch ValueError for generated labels too large for molecule."""
+        mol = MoleculeInfo.get_molecule_info(
+            molecule_formula="C2H8O1",
+            molecule_charge=1,
+            molecules_file=self.molecules_file,
+            isotopes_file=self.isotopes_file,
+        )
+        res_corr_info = rc.ResolutionCorrectionInfo(False, 60000, 200, mol)
+        res = len(list(rc.generate_labels(3, res_corr_info)))
+        self.assertEqual(res, 9)
+
+
 class TestOverlapWarnings(unittest.TestCase):
     """Overlap warnings."""
 
