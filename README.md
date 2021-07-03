@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.com/Danzelot/PICor.svg?branch=master)](https://travis-ci.com/Danzelot/PICor)
+[![codecov](https://codecov.io/gh/Danzelot/PICor/branch/master/graph/badge.svg?token=TIPO8R4P4W)](https://codecov.io/gh/Danzelot/PICor)
 
 # PICor: Statistical Isotope Correction
 
