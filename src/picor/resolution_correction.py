@@ -178,14 +178,16 @@ def generate_labels(mass_diff, res_corr_info):
     """Return combinations of possible isotopes e.g. H02 and C13 for given mass diff."""
     molecule_info = res_corr_info.molecule_info
     shift = molecule_info.isotopes.isotope_shift[molecule_info.get_isotopes()]
-    isotopes = shift[shift > 0].index  # only use isotope that cause mass shift
-    for comb in itertools.product(range(0, mass_diff + 1), repeat=len(isotopes)):
+    isotopes = shift[shift > 0]  # only use isotope that cause mass shift
+    for comb in itertools.product(range(0, mass_diff + 1), repeat=len(isotopes.index)):
+        mass_shift = sum(isotopes * comb)
+        if mass_shift != mass_diff:
+            continue
         try:
-            label = Label(pd.Series(comb, index=isotopes), molecule_info)
+            label = Label(pd.Series(comb, index=isotopes.index), molecule_info)
         except ValueError:
             continue
-        if label.get_coarse_mass_shift() == mass_diff:
-            yield label
+        yield label
 
 
 def warn_direct_overlap(label_list, res_corr_info):
