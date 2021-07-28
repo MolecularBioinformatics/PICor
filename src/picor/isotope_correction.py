@@ -15,7 +15,6 @@ __copyright__ = "Jørn Dietze"
 __license__ = "gpl3"
 
 _logger = logging.getLogger(__name__)
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "WARNING"))
 
 
 def calc_isotopologue_correction(
@@ -30,6 +29,7 @@ def calc_isotopologue_correction(
     mz_calibration=200,
     resolution=60000,
     isotopes_file=None,
+    logging_level="WARNING",
 ):
     """Calculate isotopologue correction factor for molecule.
 
@@ -66,12 +66,17 @@ def calc_isotopologue_correction(
     isotopes_file : Path or str, optional
         tab-separated file with element, mass, abundance and isotope as rows
         e.g. H 1.008 0.99 H01
+    logging_level : str
+        Logging is output to stderr
+        Possible levels: "DEBUG", "INFO", "WARNING", "CRITICAL"
+        Default level: "WARNING"
 
     Returns
     -------
     pandas.DataFrame
         Corrected data
     """
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", logging_level))
     dir_path = Path(__file__).parent
     if not isotopes_file:
         isotopes_file = dir_path / "isotopes.csv"
