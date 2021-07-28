@@ -8,6 +8,7 @@ Usage:
                         [-x EXCOL]...
                         [--isotopes-file IFILE]
                         [--molecules-file MFILE]
+                        [-v | -vv]
     picor FILE MOLECULE --res-correction
                         [--mz-calibration MZ]
                         [--isotopes-file IFILE]
@@ -16,6 +17,7 @@ Usage:
                         [-x EXCOL]...
                         [--resolution RES]
                         [--molecules-file MFILE]
+                        [-v | -vv]
     picor (-h | --help)
     picor --version
 
@@ -35,6 +37,9 @@ Options:
   --isotopes-file IFILE     Path to tab-separated isotope file
                             Element, mass, abundance and isotope as rows
                             E.g. H 1.008 0.99 H01
+  -v --verbose              Display more info like intermediate correction factors
+                            (multiple increase verbosity, up to 2)
+                            Prints to stderr
   -h --help                 Show this screen.
   --version                 Show version.
 
@@ -66,6 +71,12 @@ def cli(arguments):
         raw_data = pd.read_csv(infile, index_col=0)
     else:
         raise ValueError("FILE can be either '.csv' or '.xlsx' file type")
+    if arguments["--verbose"] == 0:
+        logging_level = "WARNING"
+    elif arguments["--verbose"] == 1:
+        logging_level = "INFO"
+    else:
+        logging_level = "DEBUG"
     corr_data = picor.calc_isotopologue_correction(
         raw_data,
         arguments["MOLECULE"],
@@ -76,6 +87,7 @@ def cli(arguments):
         resolution=float(arguments["--resolution"]),
         isotopes_file=arguments["--isotopes-file"],
         molecules_file=arguments["--molecules-file"],
+        logging_level=logging_level,
     )
     if outfile:
         corr_data.to_csv(outfile)

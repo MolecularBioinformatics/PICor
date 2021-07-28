@@ -3,7 +3,6 @@
 from pathlib import Path
 import unittest
 
-import numpy
 import pandas
 from pandas.testing import assert_series_equal
 
@@ -182,8 +181,8 @@ class TestLabels(unittest.TestCase):
     def test_sort_list(self):
         """Sort_labels gives correct order with list of strings."""
         data = [
-            ip.Label(l, self.molecule_info)
-            for l in ["4C13", "3C13", "N154C13", "No label"]
+            ip.Label(label, self.molecule_info)
+            for label in ["4C13", "3C13", "N154C13", "No label"]
         ]
         res_corr = ["No label", "3C13", "4C13", "N154C13"]
         res = ip.sort_labels(data)
