@@ -2,6 +2,22 @@
 Changelog
 =========
 
+Version 0.6.2
+=============
+
+- Add logging level parameter to calc_isotopologue_correction
+- Add --verbose CLI parameter to get correction factors
+- Increase resolution correction performance
+
+
+Version 0.6.1
+=============
+
+- fixes a bug with the resolution correction for certain cases:
+  In some configurations the mass difference between different labeled species
+  resulted in a combinatoric explosion causing calculations to run almost for ever.
+- cutoff value for the calculation was introduced and is currently set to 5.
+
 Version 0.6.0
 =============
 
