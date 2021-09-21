@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/MolecularBioinformatics/PICor.svg?branch=master)](https://travis-ci.com/MolecularBioinformatics/PICor)
+[![Run Python Tests](https://github.com/MolecularBioinformatics/PICor/actions/workflows/ci.yml/badge.svg)](https://github.com/MolecularBioinformatics/PICor/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/MolecularBioinformatics/PICor/branch/master/graph/badge.svg?token=DZIP4BMO3K)](https://codecov.io/gh/MolecularBioinformatics/PICor)
 [![CodeFactor](https://www.codefactor.io/repository/github/molecularbioinformatics/picor/badge)](https://www.codefactor.io/repository/github/molecularbioinformatics/picor)
 
