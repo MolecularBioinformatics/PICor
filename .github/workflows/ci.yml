@@ -26,4 +26,4 @@ jobs:
           python -m pip install pipenv --upgrade-strategy=only-if-needed
           pipenv install --dev --skip-lock
       - name: Test with pytest
-        run: pytest --cov
+        run: pipenv run pytest --cov
