@@ -30,7 +30,10 @@ class ResolutionCorrectionInfo:
         self.molecule_info = molecule_info
         self.molecule_mass = Label("No label", molecule_info).calc_isotopologue_mass()
         self.min_mass_diff = self.calc_min_mass_diff(
-            self.molecule_mass, molecule_info.charge, mz_calibration, resolution,
+            self.molecule_mass,
+            molecule_info.charge,
+            mz_calibration,
+            resolution,
         )
         # TODO Replace hardcoded  indirect_overlap_cutoff with flexible approach
         self.indirect_overlap_cutoff = 5
@@ -47,7 +50,7 @@ class ResolutionCorrectionInfo:
         """Calculate Full width half maximum (FWHM)."""
         if mz_cal < 0 or mz <= 0 or resolution <= 0:
             raise ValueError("Arguments must be positive")
-        return mz ** (3 / 2) / (resolution * mz_cal ** 0.5)
+        return mz ** (3 / 2) / (resolution * mz_cal**0.5)
 
     @staticmethod
     def calc_min_mass_diff(mass, charge, mz_cal, resolution):
@@ -112,7 +115,9 @@ def calc_coarse_mass_difference(label1, label2):
 
 
 def is_isotologue_overlap(
-    label1, label2, res_corr_info,
+    label1,
+    label2,
+    res_corr_info,
 ):
     """Return True if label1 and label2 are too close to detection limit.
 

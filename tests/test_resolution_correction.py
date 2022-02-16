@@ -5,6 +5,7 @@ from numbers import Number
 from pathlib import Path
 import pytest
 import unittest
+import warnings
 
 from picor.isotope_probabilities import MoleculeInfo, Label, LabelTuple
 import picor.resolution_correction as rc
@@ -179,11 +180,11 @@ class TestOverlapWarnings(unittest.TestCase):
 
     def test_direct_overlap_not_warn(self):
         """No warning with non-overlapping labels."""
-        with pytest.warns(None) as warnings:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             rc.warn_direct_overlap(
                 LabelTuple(["3H02", "4C13"], self.molecule_info), self.res_corr_info
             )
-            assert not warnings
 
     def test_indirect_overlap_warn(self):
         """Warning with indirectly overlapping labels."""

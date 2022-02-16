@@ -65,8 +65,7 @@ class IsotopeInfo:
             sep="\t",
             usecols=["abundance", "isotope"],
             index_col="isotope",
-            squeeze=True,
-        )
+        ).squeeze("columns")
 
         return abundance
 
@@ -90,21 +89,18 @@ class IsotopeInfo:
             sep="\t",
             usecols=["mass", "isotope"],
             index_col="isotope",
-            squeeze=True,
-        )
+        ).squeeze("columns")
 
     @staticmethod
     def get_shift(isotopes_file):
         """Get series of mass shift between isotopes."""
-        iso_data = pd.read_csv(isotopes_file, sep="\t", index_col="isotope",)
-        iso_data = (
-            iso_data.groupby("element")
-            .apply(
-                lambda gdf: gdf.assign(
-                    shift=lambda df: round(df["mass"] - min(df["mass"]))
-                )
-            )
-            .droplevel(0)
+        iso_data = pd.read_csv(
+            isotopes_file,
+            sep="\t",
+            index_col="isotope",
+        )
+        iso_data = iso_data.groupby("element").apply(
+            lambda gdf: gdf.assign(shift=lambda df: round(df["mass"] - min(df["mass"])))
         )
         return iso_data["shift"].astype("int64")
 
@@ -112,8 +108,10 @@ class IsotopeInfo:
     def get_elements(isotopes_file):
         """Get set of elements in isotopes_file."""
         elements = pd.read_csv(
-            isotopes_file, sep="\t", usecols=["element"], squeeze=True,
-        )
+            isotopes_file,
+            sep="\t",
+            usecols=["element"],
+        ).squeeze("columns")
         return set(elements)
 
     def get_isotopes_from_elements(self, element_list):
@@ -123,8 +121,8 @@ class IsotopeInfo:
             sep="\t",
             index_col="element",
             usecols=["element", "isotope"],
-            squeeze=True,
-        )
+        ).squeeze("columns")
+
         return list(iso_data[element_list])
 
     def get_isotopes(self):
@@ -143,8 +141,7 @@ class IsotopeInfo:
             sep="\t",
             index_col="element",
             usecols=["element", "isotope"],
-            squeeze=True,
-        )
+        ).squeeze("columns")
         iso_data = iso_data.groupby("element").min()
         return iso_data[element]
 
@@ -304,8 +301,7 @@ class MoleculeInfo:
             sep="\t",
             usecols=["name", "charge"],
             index_col="name",
-            squeeze=True,
-        )
+        ).squeeze("columns")
         try:
             charges = charges.astype(int)
         except ValueError as exc:
@@ -325,7 +321,10 @@ class MoleculeInfo:
 
     def get_molecule_light_isotopes(self):
         """Replace all element names with light isotopes ("C" -> "C13")."""
-        molecule_series = pd.Series(self.formula, dtype="int64",)
+        molecule_series = pd.Series(
+            self.formula,
+            dtype="int64",
+        )
         result = molecule_series.rename(
             {
                 "H": "H01",
@@ -655,7 +654,8 @@ def sort_labels(labels):
 
 
 def calc_correction_factor(
-    molecule_info, label=False,
+    molecule_info,
+    label=False,
 ):
     """Calculate correction factor with molecule composition defined by label.
 
@@ -734,8 +734,8 @@ def calc_label_diff_prob(label, difference_label):
         abun_unlab = abundance[isotope_unlab]
 
         trans_pr = binom((n_atoms[elem] - n_label), n_diff_label)
-        trans_pr *= abun_lab ** n_diff_label
-        trans_pr *= abun_unlab ** n_unlab
+        trans_pr *= abun_lab**n_diff_label
+        trans_pr *= abun_unlab**n_unlab
         prob.append(trans_pr)
 
     # Prob is product of single probabilities

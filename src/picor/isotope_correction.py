@@ -104,7 +104,10 @@ def correct_data(uncorrected_data, subset, res_corr_info):
     """Correct data based on labels in subset."""
     data = uncorrected_data.copy()
     for label1 in subset:
-        corr = ip.calc_correction_factor(subset.molecule_info, label1,)
+        corr = ip.calc_correction_factor(
+            subset.molecule_info,
+            label1,
+        )
         assert corr >= 1, "Correction factor should be greater or equal 1"
         data[label1.as_string] = corr * data[label1.as_string]
         _logger.info(f"Correction factor {label1.as_string}: {corr}")
