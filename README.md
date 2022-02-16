@@ -104,4 +104,4 @@ Spaces and underscores are allowed but not necessary in the label definition.
 In case you want to add additional information you can a prefix separated by a colon (':'), e.g. "NAD:2C13". The prefix will be ignored. 
 
 
-Jørn Dietze, UiT -The Arctic University of Norway, 2021
+Jørn Dietze, UiT -The Arctic University of Norway, 2022
