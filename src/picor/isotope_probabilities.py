@@ -99,7 +99,7 @@ class IsotopeInfo:
             sep="\t",
             index_col="isotope",
         )
-        iso_data = iso_data.groupby("element").apply(
+        iso_data = iso_data.groupby("element", group_keys=False).apply(
             lambda gdf: gdf.assign(shift=lambda df: round(df["mass"] - min(df["mass"])))
         )
         return iso_data["shift"].astype("int64")
@@ -142,7 +142,7 @@ class IsotopeInfo:
             index_col="element",
             usecols=["element", "isotope"],
         ).squeeze("columns")
-        iso_data = iso_data.groupby("element").min()
+        iso_data = iso_data.groupby("element", group_keys=False).min()
         return iso_data[element]
 
     def get_lightest_isotope_from_isotope(self, isotope):
