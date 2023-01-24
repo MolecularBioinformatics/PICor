@@ -2,6 +2,20 @@
 Changelog
 =========
 
+Version 1.1.0
+=============
+
+- Add Python 3.10 compatibility
+- Fix pandas droplevel error
+- Fix future and deprecated warnings
+
+
+Version 1.0.0
+=============
+
+Release of version used in article published in Analytical and Bioanalytical Chemistry.
+
+
 Version 0.6.2
 =============
 
