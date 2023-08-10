@@ -1,16 +1,9 @@
-import sys
+# -*- coding: utf-8 -*-
+"""Isotopologue correction for MS data sets.
 
-if sys.version_info[:2] >= (3, 8):
-    # TODO: Import directly (no need for conditional) when `python_requires = >= 3.8`
-    from importlib.metadata import PackageNotFoundError, version  # pragma: no cover
-else:
-    from importlib_metadata import PackageNotFoundError, version  # pragma: no cover
-
-try:
-    # Change here if project is renamed and does not equal the package name
-    dist_name = "PICor"
-    __version__ = version(dist_name)
-except PackageNotFoundError:  # pragma: no cover
-    __version__ = "unknown"
-finally:
-    del version, PackageNotFoundError
+Modules:
+    isotope_correction.py: main function
+    isotope_probabilities.py: subroutines and helper functions
+    resolution_correction.py: subroutines for resolution depend correction
+"""
+from picor.isotope_correction import calc_isotopologue_correction
