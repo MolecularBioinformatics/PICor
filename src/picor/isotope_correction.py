@@ -118,7 +118,7 @@ def correct_data(uncorrected_data, subset, res_corr_info):
             data[label2.as_string] = (
                 data[label2.as_string] - trans_prob * data[label1.as_string]
             )
-            data[label2.as_string].clip(lower=0, inplace=True)
+            data[label2.as_string] = data[label2.as_string].clip(lower=0)
             _logger.info(
                 f"Transition prob {label1.as_string} -> {label2.as_string}: {trans_prob}"
             )
