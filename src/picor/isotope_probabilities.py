@@ -100,7 +100,10 @@ class IsotopeInfo:
             index_col="isotope",
         )
         iso_data = iso_data.groupby("element", group_keys=False).apply(
-            lambda gdf: gdf.assign(shift=lambda df: round(df["mass"] - min(df["mass"])))
+            lambda gdf: gdf.assign(
+                shift=lambda df: round(df["mass"] - min(df["mass"]))
+            ),
+            include_groups=False,
         )
         return iso_data["shift"].astype("int64")
 
