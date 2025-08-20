@@ -118,7 +118,8 @@ def correct_data(uncorrected_data, subset, res_corr_info):
             data[label2.as_string] = (
                 data[label2.as_string] - trans_prob * data[label1.as_string]
             )
-            data[label2.as_string].clip(lower=0, inplace=True)
+            # Ensure no negative values after correction, but preserve dtype and avoid inplace modification issues
+            data[label2.as_string] = data[label2.as_string].clip(lower=0)
             _logger.info(
                 f"Transition prob {label1.as_string} -> {label2.as_string}: {trans_prob}"
             )
@@ -146,7 +147,8 @@ def calc_transition_prob(label1, label2, res_corr_info):
         return 0
     difference_labels = label2.subtract(label1)
     if res_corr_info.do_correction:
-        trans_prob = rc.calc_indirect_overlap_prob(label1, label2, res_corr_info)
+        trans_prob = rc.calc_indirect_overlap_prob(
+            label1, label2, res_corr_info)
     else:  # Without resolution correction
         trans_prob = ip.calc_label_diff_prob(label1, difference_labels)
     return trans_prob
