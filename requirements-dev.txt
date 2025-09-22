@@ -1,0 +1,10 @@
+-r requirements.txt
+black
+coverage
+flake8
+ipython>=7.31.1
+pdbpp
+pylint
+pyscaffold
+pytest
+pytest-cov
