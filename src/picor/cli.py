@@ -47,7 +47,7 @@ Options:
 import logging
 from pathlib import Path
 import sys
-import pkg_resources
+from importlib.metadata import version
 
 from docopt import docopt
 import pandas as pd
@@ -96,8 +96,8 @@ def cli(arguments):
 
 def main():
     """Serve as entry point for CLI."""
-    version = pkg_resources.get_distribution("picor").version
-    arguments = docopt(__doc__, version=version)
+    package_version = version("picor")
+    arguments = docopt(__doc__, version=package_version)
     _logger.info("arguments = {arguments}")
     sys.exit(cli(arguments))
 
