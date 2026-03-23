@@ -169,7 +169,13 @@ def calc_indirect_overlap_prob(label1, label2, res_corr_info):
 
     probs = []
     for label_trans in generate_labels(coarse_mass_difference, res_corr_info):
-        label1_mod = label1.add(label_trans)
+        try:
+            label1_mod = label1.add(label_trans)
+        except ValueError as e:
+            if "Too many atoms in label." in str(e):
+                continue 
+            else:
+                raise e
         if is_isotologue_overlap(label1_mod, label2, res_corr_info):
             prob = calc_label_diff_prob(label1, label_trans)
             _logger.debug(f"For trans label {label_trans}: {prob}")
