@@ -119,7 +119,9 @@ def correct_data(uncorrected_data, subset, res_corr_info):
                 data[label2.as_string] - trans_prob * data[label1.as_string]
             )
             # Ensure no negative values after correction, but preserve dtype and avoid inplace modification issues
-            data[label2.as_string] = data[label2.as_string].clip(lower=0)
+            col_name = label2.as_string
+            data.loc[:, col_name] = data[col_name].clip(lower=0)
+            #data[label2.as_string] = data[label2.as_string].clip(lower=0)
             _logger.info(
                 f"Transition prob {label1.as_string} -> {label2.as_string}: {trans_prob}"
             )
