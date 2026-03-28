@@ -81,6 +81,8 @@ class ResolutionCorrectionInfo:
         """
         if mass < 0:
             raise ValueError("'mass' must be positive.")
+        if charge == 0:
+            raise ValueError("'charge' cannot be 0, change in metabolites.csv file is required.")
         mz = abs(mass / charge)
         return (
             1.66 * abs(charge) * ResolutionCorrectionInfo.fwhm(mz_cal, mz, resolution)
