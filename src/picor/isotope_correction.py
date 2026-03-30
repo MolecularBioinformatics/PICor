@@ -96,7 +96,8 @@ def calc_isotopologue_correction(
     )
     if res_corr_info.do_correction:
         rc.warn_direct_overlap(subset, res_corr_info)
-    data = correct_data(raw_data, subset, res_corr_info)
+    clean_data = raw_data.fillna(0)
+    data = correct_data(clean_data, subset, res_corr_info)
     return data
 
 
