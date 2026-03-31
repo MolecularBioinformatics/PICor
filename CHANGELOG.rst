@@ -2,6 +2,15 @@
 Changelog
 =========
 
+Version 1.2.0
+=============
+
+- Fixed issues related to charge warnings
+- added proper handling of the pd.NA objects
+- Fix pandas droplevel error
+- Fix future and deprecated warnings
+
+
 Version 1.1.0
 =============
 
