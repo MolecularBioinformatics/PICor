@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history needed for setuptools_scm
+          fetch-tags: true  # Explicitly fetch tags for version detection
       
       - name: Setup Python
         uses: actions/setup-python@v6
