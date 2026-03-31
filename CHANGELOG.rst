@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 1.2.1
+=============
+
+- Fixed pandas SettingWithCopyWarning in isotope correction
+
+
 Version 1.2.0
 =============
 
