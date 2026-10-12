@@ -15,7 +15,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Full history needed for setuptools_scm
           fetch-tags: true  # Explicitly fetch tags for version detection
